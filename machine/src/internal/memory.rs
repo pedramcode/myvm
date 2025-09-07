@@ -1,4 +1,40 @@
-use crate::errors::VMError;
+use std::fmt::Display;
+
+use crate::{errors::VMError};
+
+pub fn hexdump_to_string(data: &[u32]) -> String {
+    const BYTES_PER_LINE: usize = 16;
+    let mut output = String::new();
+
+    for (i, chunk) in data.chunks(BYTES_PER_LINE / 4).enumerate() {
+        let offset = i * BYTES_PER_LINE;
+        output.push_str(&format!("{:08X}: ", offset));
+
+        // Hex values
+        for val in chunk {
+            output.push_str(&format!("{:08X} ", val));
+        }
+
+        // Pad if last line is shorter
+        for _ in 0..(BYTES_PER_LINE / 4 - chunk.len()) {
+            output.push_str("         ");
+        }
+
+        // ASCII representation
+        output.push('|');
+        for val in chunk {
+            let bytes = val.to_be_bytes(); // Big endian for readable dump
+            for &b in &bytes {
+                let c = if b.is_ascii_graphic() || b == b' ' { b as char } else { '.' };
+                output.push(c);
+            }
+        }
+        output.push('|');
+        output.push('\n');
+    }
+
+    output
+}
 
 #[derive(Debug)]
 /// # Memory
@@ -71,5 +107,11 @@ impl Memory {
             return Err(VMError::InvalidAddress);
         }
         Ok(self.memory[address as usize])
+    }
+}
+
+impl Display for Memory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", hexdump_to_string(&self.memory))
     }
 }

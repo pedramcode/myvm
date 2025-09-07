@@ -24,19 +24,17 @@ fn main() {
                 output.write_all(&num.to_le_bytes()).expect("unable to write in output file");
             }
         },
-        Some(Commands::Exec { path, cells, stack }) => {
+        Some(Commands::Exec { path, cells, stack, dump }) => {
             let mut file = std::fs::File::open(path).expect("unable to open binary file");
             let mut buffer = Vec::new();
             file.read_to_end(&mut buffer).expect("unable to read binary content");
             if buffer.len() < mem::size_of::<u32>() {
                 panic!("file is too short to contain header");
             }
-            let header_bytes = &buffer[..4];
-            let origin = u32::from_le_bytes(header_bytes.try_into().unwrap());
-            let data_bytes = &buffer[4..];
-            let data: Vec<u32> = data_bytes
+            let origin = u32::from_le_bytes(buffer[..4].try_into().unwrap());
+            let data: Vec<u32> = buffer[4..]
                 .chunks_exact(4)
-                .map(|chunk| u32::from_le_bytes(chunk.try_into().unwrap()))
+                .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
                 .collect();
             
             let mut machine = Machine::new(MachineOptions{
@@ -46,6 +44,9 @@ fn main() {
             machine.load_data(origin, &data).unwrap();
             machine.set_origin(origin);
             machine.execute().unwrap();
+            if *dump {
+                println!("{}", machine.memory);
+            }
         },
         None => {},
     }

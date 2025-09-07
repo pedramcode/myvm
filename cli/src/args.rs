@@ -29,5 +29,8 @@ pub enum Commands {
         /// stack cells
         #[arg(short, long, default_value_t = 256)]
         stack: u32,
+        /// dump memory to stdout after execution
+        #[arg(short, long)]
+        dump: bool
     },
 }

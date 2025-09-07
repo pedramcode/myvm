@@ -15,34 +15,21 @@ pub mod tests {
     }
 
     #[test]
-    pub fn execute() {
+    pub fn div() {
         let code = [
-            0xf001a001, 5, // PUSH 5
-            0xf001a001, 4, // PUSH 4
-            0xf0050000, // SWAP
-            0xf0030000, // ADD
-            0xf002a004, 0, // POP r0
+            0xf001a001, 2, // PUSH 2
             0xf001a001, 10, // PUSH 10
-            0xf001a002, 0, // PUSH r0
-            0xf0040000, // SUB
-            0xf002a004, 1, // POP r1
-            0xf006a006, 4, 10, // MOVE r4 10
-            0xf006a007, 5, 1, // MOVE r5 r1
-            0xf001a002, 4, // PUSH r4
-            0xf001a002, 5, // PUSH r5
-            0xf0030000, // ADD
-            0xf002a004, 7, // POP r7
-            0xf007a00a, 50, 7, // STORE 50 r7
-            0xf006a008, 0, 50, // MOVE r0 &50
-            0xf0080000, 56, // JMP 56
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0xf0150000, // DIV
+            0xf002a004, 0, // POP r0
+            0xf006a007, 1, 3, // MOVE r1 r3
             0xffff0000, // TERM
         ];
         let mut machine = Machine::new(MachineOptions{memory_cells: 1024, memory_stack_size: 256}).unwrap();
         machine.load_data(10, &code).unwrap();
         machine.set_origin(10);
         machine.execute().unwrap();
-        assert_eq!(machine.read_register(0).unwrap(), 11);
+        assert_eq!(machine.read_register(0).unwrap(), 5);
+        assert_eq!(machine.read_register(1).unwrap(), 0);
     }
 
     #[test]

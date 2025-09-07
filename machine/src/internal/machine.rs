@@ -97,8 +97,8 @@ impl Machine {
                 return Ok(true);
             },
             (Opcode::Add, OpcodeVariant::Default) => {
-                let a = self.memory.pop()? as i32;
                 let b = self.memory.pop()? as i32;
+                let a = self.memory.pop()? as i32;
                 let result = b.wrapping_add(a);
                 self.flag.zero = result == 0;
                 self.flag.negative = result < 0;
@@ -108,8 +108,8 @@ impl Machine {
                 self.memory.push(result as u32)?;
             },
             (Opcode::Sub, OpcodeVariant::Default) => {
-                let a = self.memory.pop()? as i32;
                 let b = self.memory.pop()? as i32;
+                let a = self.memory.pop()? as i32;
                 let result = b.wrapping_sub(a);
                 self.flag.zero = result == 0;
                 self.flag.negative = result < 0;
@@ -174,8 +174,8 @@ impl Machine {
                 jumped = true;
             },
             (Opcode::Mul, OpcodeVariant::Default) => {
-                let a = self.memory.pop()? as i32;
                 let b = self.memory.pop()? as i32;
+                let a = self.memory.pop()? as i32;
                 let result = b.wrapping_mul(a);
                 self.flag.zero = result == 0;
                 self.flag.negative = result < 0;
@@ -186,19 +186,19 @@ impl Machine {
                 self.memory.push(result as u32)?;
             },
             (Opcode::Div, OpcodeVariant::Default) => {
-                let a = self.memory.pop()? as i32; // divisor
-                let b = self.memory.pop()? as i32; // dividend
-                if a == 0 {
-                    return Err(VMError::DivisionByZero); // Add a new error variant
+                let a = self.memory.pop()?; // u32
+                let b = self.memory.pop()?; // u32
+                if b == 0 {
+                    return Err(VMError::DivisionByZero);
                 }
-                let result = b.wrapping_div(a);
-                self.flag.zero = result == 0;
-                self.flag.negative = result < 0;
+                let quotient = a / b;
+                let remainder = a % b;
+                self.register.r3 = remainder;
+                self.memory.push(quotient)?; // always u32
+                self.flag.zero = quotient == 0;
+                self.flag.negative = false; // treat as unsigned
                 self.flag.overflow = false;
                 self.flag.carry = false;
-                let rem = (b % a) as u32;
-                self.register.r3 = rem;
-                self.memory.push(result as u32)?;
             },
 
             (Opcode::Jump, OpcodeVariant::JumpZero) => {
@@ -244,17 +244,17 @@ impl Machine {
             (Opcode::And, OpcodeVariant::Default) => {
                 let a = self.memory.pop()?;
                 let b = self.memory.pop()?;
-                self.memory.push(b & a)?;
+                self.memory.push(a & b)?;
             },
             (Opcode::Or, OpcodeVariant::Default) => {
                 let a = self.memory.pop()?;
                 let b = self.memory.pop()?;
-                self.memory.push(b | a)?;
+                self.memory.push(a | b)?;
             },
             (Opcode::Xor, OpcodeVariant::Default) => {
                 let a = self.memory.pop()?;
                 let b = self.memory.pop()?;
-                self.memory.push(b ^ a)?;
+                self.memory.push(a ^ b)?;
             },
             (Opcode::Not, OpcodeVariant::Default) => {
                 let a = self.memory.pop()?;
