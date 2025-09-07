@@ -214,12 +214,10 @@ Interrupts provide a bridge between VM code and system-level functions without c
 @ORG 0x100
 
 CALL .f
+TERM
 
 .f
 PUSH 13
 INT 0 0
 RET
-
-TERM
 ```
-
