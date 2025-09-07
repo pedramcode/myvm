@@ -251,7 +251,7 @@ INT 0 0
 RET
 ```
 
-## Hello World!
+## Hello World! (The hard way!)
 
 ```asm
 @org 10
