@@ -378,3 +378,6 @@ This project is a hobby but fully open for contributions. Here are some key area
 - **Network Interrupt Module**  
   - Add network communication interrupts for sending/receiving data  
   - Enable TCP/UDP support for simple network programs
+
+- **More unit tests**
+  - Write unit test for all modules and functions
