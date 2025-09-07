@@ -24,7 +24,7 @@ fn main() {
                 output.write_all(&num.to_le_bytes()).expect("unable to write in output file");
             }
         },
-        Some(Commands::Exec { path }) => {
+        Some(Commands::Exec { path, cells, stack }) => {
             let mut file = std::fs::File::open(path).expect("unable to open binary file");
             let mut buffer = Vec::new();
             file.read_to_end(&mut buffer).expect("unable to read binary content");
@@ -40,8 +40,8 @@ fn main() {
                 .collect();
             
             let mut machine = Machine::new(MachineOptions{
-                memory_cells: 1024,
-                memory_stack_size: 256,
+                memory_cells: *cells,
+                memory_stack_size: *stack,
             }).unwrap();
             machine.load_data(origin, &data).unwrap();
             machine.set_origin(origin);

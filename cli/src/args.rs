@@ -23,5 +23,11 @@ pub enum Commands {
         /// path of binary file
         #[arg(short, long)]
         path: String,
+        /// memory cells
+        #[arg(short, long, default_value_t = 2048)]
+        cells: u32,
+        /// stack cells
+        #[arg(short, long, default_value_t = 256)]
+        stack: u32,
     },
 }
