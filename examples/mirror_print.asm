@@ -1,6 +1,6 @@
 @org 0
 
-push 123
+push 123456
 call .split
 TERM
 
