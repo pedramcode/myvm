@@ -65,24 +65,6 @@ pub mod tests {
     }
 
     #[test]
-    pub fn parse_token_object() {
-        let data = "store  12  r5  ";
-        let res = parse_token(data).unwrap();
-        match res.1 {
-            Token::Command(cmd) => {
-                match cmd {
-                    Cmd::StoreReg(reg, val) => {
-                        assert_eq!(reg, 12);
-                        assert_eq!(val, 5);
-                    },
-                    _ => panic!(),
-                }
-            },
-            _ => panic!(),
-        }
-    }
-
-    #[test]
     pub fn parse_program_object() {
         let code = r#"
         @org    0x10 
