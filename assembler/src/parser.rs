@@ -1,8 +1,8 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag, tag_no_case, take_until, take_while1},
+    bytes::complete::{tag, tag_no_case, take_till, take_until, take_while1},
     character::complete::{alphanumeric1, char, digit1, line_ending, multispace1, space0},
-    combinator::{map, map_res},
+    combinator::{map, map_res, opt},
     error::{Error, ErrorKind},
     multi::separated_list0,
     sequence::{delimited, pair, preceded},
@@ -14,7 +14,11 @@ use crate::tokens::{Cmd, ConstValue, MetaType, Token};
 // ----------------- Basic parsers -----------------
 
 pub fn parse_comment(input: &str) -> IResult<&str, ()> {
-    let (rem, _) = preceded(char(';'), take_until("\n")).parse(input)?;
+    // A comment starts with `;` and goes until newline or EOF
+    let (rem, _) = preceded(
+        char(';'),
+        take_till(|c| c == '\n')
+    ).parse(input)?;
     Ok((rem, ()))
 }
 
@@ -288,14 +292,23 @@ pub fn parse_token(input: &str) -> IResult<&str, Token<'_>> {
 }
 
 pub fn parse_line(input: &str) -> IResult<&str, Option<Token<'_>>> {
-    Ok(alt((
-        // Case 1: comment line
-        map(delimited(space0, parse_comment, space0), |_| None),
-        // Case 2: actual token
-        map(delimited(space0, parse_token, space0), Some),
-        // Case 3: empty line
-        map(space0, |_| None),
-    )).parse(input)?)
+    let (rem, _) = space0(input)?; // leading spaces
+    
+    // Try token first
+    if let Ok((rem, token)) = parse_token(rem) {
+        // Allow optional trailing comment
+        let (rem, _) = opt(preceded(space0, parse_comment)).parse(rem)?;
+        let (rem, _) = space0(rem)?;
+        return Ok((rem, Some(token)));
+    }
+
+    // Otherwise, maybe it's just a comment
+    if let Ok((rem, _)) = parse_comment(rem) {
+        return Ok((rem, None));
+    }
+
+    // Or empty line
+    Ok((rem, None))
 }
 
 pub fn parse_program(input: &str) -> IResult<&str, Vec<Token<'_>>> {
