@@ -1,4 +1,34 @@
-# Rust virtual machine / assembler and compiler
+# Rust Virtual Machine / Assembler and Compiler
+
+## Table of Contents
+- [🏗 Architecture](#-architecture)
+  - [What is a Stack-Based VM?](#what-is-a-stack-based-vm)
+  - [Instruction Set: RISC Design](#instruction-set-risc-design)
+  - [Main VM Components](#main-vm-components)
+    - [1. Memory](#1-memory)
+    - [2. Registers](#2-registers)
+    - [3. Flags](#3-flags)
+- [📝 VM Assembly Syntax and Commands](#-vm-assembly-syntax-and-commands)
+  - [Numbers](#numbers)
+  - [Memory Addresses](#memory-addresses)
+  - [Metas](#metas)
+  - [Comments](#comments)
+  - [Registers](#registers)
+  - [Opcodes (commands)](#opcodes-commands)
+  - [Labels](#labels)
+  - [Interrupts](#interrupts)
+    - [Syntax](#syntax)
+    - [Example: Module 0 = IO](#example-module-0--io)
+    - [Example Usage](#example-usage)
+  - [Hello World!](#hello-world)
+- [💻 Command-Line Interface (CLI)](#-command-line-interface-cli)
+  - [Installation](#installation)
+  - [Commands](#commands)
+    - [1. Compile](#1-compile)
+    - [2. Exec](#2-exec)
+- [🛠️ Developer TODO / Roadmap](#️-developer-todo--roadmap)
+
+---
 
 ## 🏗 Architecture
 
@@ -16,7 +46,6 @@ PUSH 10
 PUSH 20
 ADD
 ```
-
 
 - `PUSH 10` pushes the value `10` onto the stack.  
 - `PUSH 20` pushes the value `20`.  
@@ -45,7 +74,6 @@ PUSH 42 ; Opcode: PUSH, Operand: 42
 PUSH 32 ; Opcode: PUSH, Operand: 32
 ADD ; Opcode: ADD (no operands)
 ```
-
 
 Some Opcodes have **variants**.  
 For example, the **Jump instruction** has multiple variants that depend on conditions:  
@@ -239,6 +267,12 @@ PUSH 87
 PUSH 32
 PUSH 111
 PUSH 108
+PUSH 114
+PUSH 111
+PUSH 87
+PUSH 32
+PUSH 111
+PUSH 108
 PUSH 108
 PUSH 101
 PUSH 72
@@ -273,63 +307,74 @@ The compiled executable will be in target/release/. You can run it directly:
 
 ### Commands
 
-1. Compile
+#### 1. Compile
 
-  Compiles an assembly source file into a binary that can be executed on the VM.
+Compiles an assembly source file into a binary that can be executed on the VM.
 
-  Usage:
+Usage:
 
-  ```bash
-  ./myvm compile -p source.asm -o output.bin
-  ```
+```bash
+./myvm compile -p source.asm -o output.bin
+```
 
-  #### Options
+##### Options
 
-  | Option         | Description                      |
-  | -------------- | -------------------------------- |
-  | `-p, --path`   | Path to the source assembly file |
-  | `-o, --output` | Path to the output binary file   |
+| Option         | Description                      |
+| -------------- | -------------------------------- |
+| `-p, --path`   | Path to the source assembly file |
+| `-o, --output` | Path to the output binary file   |
 
-  How it works:
+How it works:
 
-  * Reads the assembly file at the given path
+* Reads the assembly file at the given path
+* Compiles it using the VM compiler
+* Writes a binary file with:
+  * Header: origin address (u32)
+  * Body: compiled bytecode (u32 per instruction)
 
-  * Compiles it using the VM compiler
+#### 2. Exec
 
-  * Writes a binary file with:
+Executes a compiled binary file on the VM.
 
-      * Header: origin address (u32)
+Usage:
 
-      * Body: compiled bytecode (u32 per instruction)
+```bash
+./myvm exec -p output.bin --cells 2048 --stack 256
+```
 
-2. Exec
+Options:
 
-  Executes a compiled binary file on the VM.
-
-  Usage:
-
-  ```bash
-  ./myvm exec -p output.bin --cells 2048 --stack 256
-  ```
-
-  Options:
-
-  | Option        | Description                             | Default |
-  | ------------- | --------------------------------------- | ------- |
-  | `-p, --path`  | Path to the binary file                 | —       |
-  | `-c, --cells` | Number of memory cells in the VM        | 2048    |
-  | `-s, --stack` | Number of cells allocated for the stack | 256     |
+| Option        | Description                             | Default |
+| ------------- | --------------------------------------- | ------- |
+| `-p, --path`  | Path to the binary file                 | —       |
+| `-c, --cells` | Number of memory cells in the VM        | 2048    |
+| `-s, --stack` | Number of cells allocated for the stack | 256     |
 
 How it works:
 
 * Reads the binary file
-
 * Parses the origin address from the header
-
 * Loads the bytecode into VM memory
-
 * Configures the VM memory and stack size
-
 * Sets the program counter to the origin
-
 * Executes instructions sequentially until `TERM` or an error occurs
+
+## 🛠️ Developer TODO / Roadmap
+
+This project is a hobby but fully open for contributions. Here are some key areas to work on:
+
+- **Error Handling**  
+  - Detect and handle stack overflows, invalid memory access, and illegal opcodes  
+  - Provide descriptive runtime error messages
+
+- **Heap and Memory Management**  
+  - Implement dynamic memory allocation  
+  - Add garbage collection or memory reuse strategies
+
+- **IO Interrupt Module**  
+  - Expand module 0 functionality  
+  - Support reading input, printing formatted output, and file operations
+
+- **Network Interrupt Module**  
+  - Add network communication interrupts for sending/receiving data  
+  - Enable TCP/UDP support for simple network programs
