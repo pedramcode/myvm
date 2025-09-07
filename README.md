@@ -382,5 +382,5 @@ This project is a hobby but fully open for contributions. Here are some key area
 - **More unit tests**
   - Write unit test for all modules and functions
 
-- **Code docs***
+- **Code docs**
   - Write better code docs
