@@ -46,6 +46,14 @@ pub fn compile(code: String) -> CompiledFrame {
                             },
                         }
                     },
+                    crate::tokens::Cmd::Inc(reg) => {
+                        result.push(combine_hl(Opcode::Inc as u32, OpcodeVariant::Default as u32));
+                        result.push(reg);
+                    },
+                    crate::tokens::Cmd::Dec(reg) => {
+                        result.push(combine_hl(Opcode::Dec as u32, OpcodeVariant::Default as u32));
+                        result.push(reg);
+                    },
                     crate::tokens::Cmd::Mul => {
                         result.push(combine_hl(Opcode::Mul as u32, OpcodeVariant::Default as u32));
                     },

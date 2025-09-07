@@ -27,6 +27,8 @@ pub enum Opcode {
     Drop = 0xf013,
     Mul = 0xf014,
     Div = 0xf015,
+    Inc = 0xf016,
+    Dec = 0xf017,
     Terminate = 0xffff,
 }
 
@@ -115,6 +117,8 @@ impl Opcode {
             x if x == Self::Drop as u32 => Ok(Self::Drop),
             x if x == Self::Mul as u32 => Ok(Self::Mul),
             x if x == Self::Div as u32 => Ok(Self::Div),
+            x if x == Self::Inc as u32 => Ok(Self::Inc),
+            x if x == Self::Dec as u32 => Ok(Self::Dec),
             _ => {
                 return Err(VMError::InvalidOpcode);
             }

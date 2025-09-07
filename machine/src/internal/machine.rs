@@ -331,6 +331,16 @@ impl Machine {
                     self.memory.push(a)?;
                 }
             },
+            (Opcode::Inc, OpcodeVariant::Default) => {
+                self.register.pc += 1;
+                let reg = self.memory.read(self.register.pc)?;
+                self.register.set(reg, self.register.get(reg)? + 1)?;
+            },
+            (Opcode::Dec, OpcodeVariant::Default) => {
+                self.register.pc += 1;
+                let reg = self.memory.read(self.register.pc)?;
+                self.register.set(reg, self.register.get(reg)? - 1)?;
+            },
             (Opcode::Dup, OpcodeVariant::DupReg) => {
                 self.register.pc += 1;
                 let amount = self.register.get(self.memory.read(self.register.pc)?)?;

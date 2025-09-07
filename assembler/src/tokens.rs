@@ -39,6 +39,8 @@ pub enum Cmd<'a> {
     Not,
     Mul,
     Div,
+    Inc(u32),
+    Dec(u32),
     ShrConst(u32),
     ShrReg(u32),
     ShlConst(u32),

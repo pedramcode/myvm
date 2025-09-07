@@ -118,6 +118,8 @@ macro_rules! keyword_cmd {
 
 fn parse_push_const(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("push", parse_const_value, PushConst)(input) }
 fn parse_push_reg(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("push", parse_reg, PushReg)(input) }
+fn parse_inc(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("inc", parse_reg, Inc)(input) }
+fn parse_dec(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("dec", parse_reg, Dec)(input) }
 fn parse_push_address(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("push", parse_address, PushAddr)(input) }
 fn parse_pop_reg(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("pop", parse_reg, PopReg)(input) }
 fn parse_pop_address(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("pop", parse_address, PopAddr)(input) }
@@ -255,6 +257,8 @@ pub fn parse_command(input: &str) -> IResult<&str, Cmd<'_>> {
         )),
         // Second group (remaining parsers)
         alt((
+            parse_inc,
+            parse_dec,
             parse_int,
             parse_drop,
             parse_or,
