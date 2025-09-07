@@ -1,7 +1,9 @@
 [package]
-name = "cli"
+name = "myvm"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-clap = "4.5.47"
+clap = { version = "4.5.47", features = ["derive"] }
+assembler = { path = "../assembler" }
+machine = { path = "../machine" }
