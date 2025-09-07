@@ -248,3 +248,88 @@ INT 0 2
 
 TERM
 ```
+
+## 💻 Command-Line Interface (CLI)
+
+This project includes a **CLI tool** built with [Rust Clap](https://crates.io/crates/clap) to **compile** assembly code into binary and **execute** binary files on the VM.
+
+The CLI provides two main commands: `compile` and `exec`.
+
+---
+
+### Installation
+
+After cloning the repository, build the CLI with Cargo:
+
+```bash
+cargo build --release
+```
+
+The compiled executable will be in target/release/. You can run it directly:
+
+```bash
+./myvm [COMMAND] [OPTIONS]
+```
+
+### Commands
+
+1. Compile
+
+  Compiles an assembly source file into a binary that can be executed on the VM.
+
+  Usage:
+
+  ```bash
+  ./myvm compile -p source.asm -o output.bin
+  ```
+
+  #### Options
+
+  | Option         | Description                      |
+  | -------------- | -------------------------------- |
+  | `-p, --path`   | Path to the source assembly file |
+  | `-o, --output` | Path to the output binary file   |
+
+  How it works:
+
+  * Reads the assembly file at the given path
+
+  * Compiles it using the VM compiler
+
+  * Writes a binary file with:
+
+      * Header: origin address (u32)
+
+      * Body: compiled bytecode (u32 per instruction)
+
+2. Exec
+
+  Executes a compiled binary file on the VM.
+
+  Usage:
+
+  ```bash
+  ./myvm exec -p output.bin --cells 2048 --stack 256
+  ```
+
+  Options:
+
+  | Option        | Description                             | Default |
+  | ------------- | --------------------------------------- | ------- |
+  | `-p, --path`  | Path to the binary file                 | —       |
+  | `-c, --cells` | Number of memory cells in the VM        | 2048    |
+  | `-s, --stack` | Number of cells allocated for the stack | 256     |
+
+How it works:
+
+* Reads the binary file
+
+* Parses the origin address from the header
+
+* Loads the bytecode into VM memory
+
+* Configures the VM memory and stack size
+
+* Sets the program counter to the origin
+
+* Executes instructions sequentially until `TERM` or an error occurs
