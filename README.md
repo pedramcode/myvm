@@ -384,3 +384,6 @@ This project is a hobby but fully open for contributions. Here are some key area
 
 - **Code docs**
   - Write better code docs
+
+- **Create a REPL**
+  - REPL in CLI
