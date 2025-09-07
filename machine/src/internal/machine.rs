@@ -334,12 +334,28 @@ impl Machine {
             (Opcode::Inc, OpcodeVariant::Default) => {
                 self.register.pc += 1;
                 let reg = self.memory.read(self.register.pc)?;
-                self.register.set(reg, self.register.get(reg)? + 1)?;
+                let a = self.register.get(reg)? as i32;
+                let b = 1;
+                let result = a.wrapping_add(b);
+                self.flag.zero = result == 0;
+                self.flag.negative = result < 0;
+                self.flag.overflow = (b > 0 && a > 0 && result < 0) || (b < 0 && a < 0 && result > 0);
+                let carry = (b as u32).overflowing_add(a as u32).1;
+                self.flag.carry = carry;
+                self.register.set(reg, result as u32)?;
             },
             (Opcode::Dec, OpcodeVariant::Default) => {
                 self.register.pc += 1;
                 let reg = self.memory.read(self.register.pc)?;
-                self.register.set(reg, self.register.get(reg)? - 1)?;
+                let a = self.register.get(reg)? as i32;
+                let b = 1;
+                let result = a.wrapping_sub(b);
+                self.flag.zero = result == 0;
+                self.flag.negative = result < 0;
+                self.flag.overflow = (b > 0 && a < 0 && result < 0) || (b < 0 && a > 0 && result > 0);
+                let (_res, borrow) = (b as u32).overflowing_sub(a as u32);
+                self.flag.carry = !borrow;
+                self.register.set(reg, result as u32)?;
             },
             (Opcode::Dup, OpcodeVariant::DupReg) => {
                 self.register.pc += 1;

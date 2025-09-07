@@ -1,15 +1,11 @@
-@ORG 10
+MOVE r0 10
 
-PUSH 1
-PUSH 2
-ADD
-POP R0
-PUSH R0
-PUSH 48
-ADD
-INT 0 0
-PUSH 13
-INT 0 0
-PUSH 10
-INT 0 0
+move r0 10
+move r1 0
+.loop
+    inc r1
+    dec r0
+    jnz .loop
+push r1
+
 TERM

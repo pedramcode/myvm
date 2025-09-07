@@ -171,6 +171,8 @@ The VM supports registers:
 | `DIV`           | -                  | Pops two values, divides, pushes result, puts reminder in R3.                   |
 | `DROP`          | -                  | Drops the top item of the stack                           |
 | `SWAP`          | -                  | Swaps top two items on stack                              |
+| `INC r0 `       | register           | increase register by 1                                    |
+| `DEC r0 `       | register           | decrease register by 1                                    |
 | `MOVE r0 10`    | register, value    | Moves constant into register                              |
 | `MOVE r0 r1`    | register, register | Moves value from one register to another                  |
 | `MOVE r1 &12`   | register, address  | Moves value from memory address to register               |
