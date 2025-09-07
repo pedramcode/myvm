@@ -85,6 +85,7 @@ impl Memory {
         }
         self.sp -= 1;
         let result = self.memory[len - self.sp as usize - 1];
+        self.memory[len - self.sp as usize - 1] = 0;
         Ok(result)
     }
 
