@@ -1,6 +1,6 @@
 #[cfg(test)]
 pub mod tests {
-    use assembler::{parser::{parse_const_value, parse_meta, parse_number, parse_program, parse_str, parse_token}, tokens::{Cmd,  Token}};
+    use assembler::{parser::{parse_const_value, parse_meta, parse_number, parse_program, parse_str}};
 
     #[test]
     pub fn number_hex(){
