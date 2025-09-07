@@ -196,6 +196,8 @@ impl Machine {
                 self.flag.negative = result < 0;
                 self.flag.overflow = false;
                 self.flag.carry = false;
+                let rem = (b % a) as u32;
+                self.register.r3 = rem;
                 self.memory.push(result as u32)?;
             },
 

@@ -168,7 +168,7 @@ The VM supports registers:
 | `ADD`           | -                  | Pops two values, adds them, pushes result                 |
 | `SUB`           | -                  | Pops two values, subtracts, pushes result                 |
 | `MUL`           | -                  | Pops two values, multiplies, pushes result                |
-| `DIV`           | -                  | Pops two values, divides, pushes result                   |
+| `DIV`           | -                  | Pops two values, divides, pushes result, puts reminder in R3.                   |
 | `DROP`          | -                  | Drops the top item of the stack                           |
 | `SWAP`          | -                  | Swaps top two items on stack                              |
 | `MOVE r0 10`    | register, value    | Moves constant into register                              |
