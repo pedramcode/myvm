@@ -42,6 +42,7 @@ For example:
 
 ```assembly
 PUSH 42 ; Opcode: PUSH, Operand: 42
+PUSH 32 ; Opcode: PUSH, Operand: 32
 ADD ; Opcode: ADD (no operands)
 ```
 
