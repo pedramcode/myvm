@@ -9,6 +9,7 @@ $newline dw 10 13 0
 
 push [$num]
 safecall .factorial
+pop r0
 
 push $title
 int 0 3
@@ -35,5 +36,5 @@ term
         dec r1
         push r1
         jg .loop
-
+    push r0
     ret
