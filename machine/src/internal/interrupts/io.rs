@@ -30,10 +30,10 @@ pub fn print_until_function(machine: &mut Machine) -> Result<(), VMError> {
 pub fn print_data_string_function(machine: &mut Machine) -> Result<(), VMError> {
     let mut addr = machine.memory.pop()?;
     Ok(loop {
-        if addr == 0 {
+        let character = machine.memory.read(addr)?;
+        if character == 0 {
             break;
         }
-        let character = machine.memory.read(addr)?;
         print!("{}", char::from_u32(character).unwrap_or('☐'));
         addr += 1;
     })
