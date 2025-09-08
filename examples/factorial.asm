@@ -1,6 +1,6 @@
 [data]
 
-$num dw 5
+$num dw 5 6 7
 $title dw "Factorial result: " 13 10 0
 $msg dw "! = " 0
 $newline dw 10 13 0
@@ -37,4 +37,5 @@ term
         push r1
         jg .loop
     push r0
+
     ret
