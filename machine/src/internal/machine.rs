@@ -72,6 +72,22 @@ impl Machine {
                 let value = self.memory.read(next)?;
                 self.memory.push(value)?;
             },
+            (Opcode::Push, OpcodeVariant::PushAddrOffsetConst) => {
+                self.register.pc += 1;
+                let address = self.memory.read(self.register.pc)?;
+                self.register.pc += 1;
+                let offset = self.memory.read(self.register.pc)?;
+                let value = self.memory.read(address + offset)?;
+                self.memory.push(value)?;
+            },
+            (Opcode::Push, OpcodeVariant::PushAddrOffsetReg) => {
+                self.register.pc += 1;
+                let address = self.memory.read(self.register.pc)?;
+                self.register.pc += 1;
+                let reg = self.memory.read(self.register.pc)?;
+                let value = self.memory.read(address + self.register.get(reg)?)?;
+                self.memory.push(value)?;
+            },
             (Opcode::Pop, OpcodeVariant::PopReg) => {
                 self.register.pc += 1;
                 let next = self.memory.read(self.register.pc)?;
@@ -144,6 +160,31 @@ impl Machine {
                 self.register.pc += 1;
                 let value = self.memory.read(self.register.pc)?;
                 self.register.set(reg, self.memory.read(value)?)?;
+            },
+            (Opcode::Move, OpcodeVariant::MoveAddrReg) => {
+                self.register.pc += 1;
+                let reg = self.memory.read(self.register.pc)?;
+                self.register.pc += 1;
+                let value = self.register.get(self.memory.read(self.register.pc)?)?;
+                self.register.set(reg, self.memory.read(value)?)?;
+            },
+            (Opcode::Move, OpcodeVariant::MoveAddrOffsetConst) => {
+                self.register.pc += 1;
+                let reg = self.memory.read(self.register.pc)?;
+                self.register.pc += 1;
+                let value = self.memory.read(self.register.pc)?;
+                self.register.pc += 1;
+                let offset = self.memory.read(self.register.pc)?;
+                self.register.set(reg, self.memory.read(value + offset)?)?;
+            },
+            (Opcode::Move, OpcodeVariant::MoveAddrOffsetReg) => {
+                self.register.pc += 1;
+                let reg_target = self.memory.read(self.register.pc)?;
+                self.register.pc += 1;
+                let value = self.memory.read(self.register.pc)?;
+                self.register.pc += 1;
+                let reg = self.memory.read(self.register.pc)?;
+                self.register.set(reg_target, self.memory.read(value + self.register.get(reg)?)?)?;
             },
             (Opcode::Store, OpcodeVariant::StoreConst) => {
                 self.register.pc += 1;

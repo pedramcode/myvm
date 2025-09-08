@@ -1,7 +1,7 @@
 use machine::internal::opcode::{Opcode, OpcodeVariant};
 use std::{collections::HashMap};
 
-use crate::parser::parse_program;
+use crate::{parser::parse_program, tokens::DataType};
 
 fn combine_hl(high: u32, low: u32) -> u32 {
     // mask to ensure only 16 bits are taken
@@ -14,6 +14,82 @@ pub struct CompiledFrame {
     pub binary: Vec<u32>,
 }
 
+fn pack_u16_to_u32(v: Vec<u16>) -> Vec<u32> {
+    let mut out = Vec::with_capacity((v.len() + 1) / 2);
+
+    let mut iter = v.into_iter();
+    while let Some(high) = iter.next() {
+        if let Some(low) = iter.next() {
+            // pack two u16 into u32
+            let packed = ((high as u32) << 16) | (low as u32);
+            out.push(packed);
+        } else {
+            // odd one out → shift into high 16 bits, low filled with zeros
+            let packed = (high as u32) << 16;
+            out.push(packed);
+        }
+    }
+
+    out
+}
+
+fn pack_u8_to_u32(v: Vec<u8>) -> Vec<u32> {
+    let mut out = Vec::with_capacity((v.len() + 3) / 4);
+
+    let mut iter = v.into_iter();
+    while let Some(b1) = iter.next() {
+        if let Some(b2) = iter.next() {
+            if let Some(b3) = iter.next() {
+                if let Some(b4) = iter.next() {
+                    // full 4 bytes
+                    let packed = ((b1 as u32) << 24)
+                               | ((b2 as u32) << 16)
+                               | ((b3 as u32) << 8)
+                               |  (b4 as u32);
+                    out.push(packed);
+                    continue;
+                } else {
+                    // 3 bytes
+                    let packed = ((b1 as u32) << 24)
+                               | ((b2 as u32) << 16)
+                               | ((b3 as u32) << 8);
+                    out.push(packed);
+                    break;
+                }
+            } else {
+                // 2 bytes
+                let packed = ((b1 as u32) << 24)
+                           | ((b2 as u32) << 16);
+                out.push(packed);
+                break;
+            }
+        } else {
+            // only 1 byte
+            let packed = (b1 as u32) << 24;
+            out.push(packed);
+            break;
+        }
+    }
+
+    out
+}
+
+
+pub fn check_section(target: &str, current: &Option<&str>) {
+    if let Some(s) = current {
+        if target.to_lowercase() != (*s).to_lowercase() {
+            panic!("invalid code for section '{}'", *s);
+        }
+    } else {
+        panic!("invalid code for section");
+    }
+}
+
+#[derive(Debug)]
+struct DataLookup {
+    pub address: u32,
+}
+
 pub fn compile(code: String) -> CompiledFrame {
     let mut result: Vec<u32> = Vec::new();
     let mut origin: u32 = 0;
@@ -21,6 +97,12 @@ pub fn compile(code: String) -> CompiledFrame {
     let mut label_usage = HashMap::<usize, &str>::new();
     let mut labels = HashMap::<&str, usize>::new();
     let (_, tokens) = parse_program(content).unwrap();
+    let mut current_section:Option<&str> = None;
+
+    let mut data_list: Vec<(&str, DataType, Vec<u32>)> = Vec::new();
+    let mut data_lookup: HashMap<&str, DataLookup> = HashMap::new();
+    let mut data_usage: HashMap<usize, (&str, u32)> = HashMap::new();
+
     for token in tokens {
         match token {
             crate::tokens::Token::Meta(meta_type) => {
@@ -31,7 +113,69 @@ pub fn compile(code: String) -> CompiledFrame {
                     crate::tokens::MetaType::Include(_) => {},
                 }
             },
+            crate::tokens::Token::Section(sec) => {
+                if sec.to_lowercase() == "text" || sec.to_lowercase() == "data" {
+                    current_section = Some(sec);
+                } else {
+                    panic!("invalid section '{}'", sec);
+                }
+            },
+            crate::tokens::Token::DataDef(id, typ, values) => {
+                check_section("data", &current_section);
+                let result = match typ {
+                    crate::tokens::DataType::Byte => {
+                        let mut acc: Vec<u8> = Vec::new();
+                        for value in values {
+                            match value {
+                                crate::tokens::DataValue::Number(n) => {
+                                    if n > u8::MAX as u32 {
+                                        panic!("Byte value overflow");
+                                    }
+                                    acc.push(n as u8);
+                                },
+                                crate::tokens::DataValue::String(s) => {
+                                    acc.append(&mut s.chars().map(|c| c as u8).collect());
+                                }
+                            }
+                        }
+                        pack_u8_to_u32(acc)
+                    },
+                    crate::tokens::DataType::Word => {
+                        let mut acc: Vec<u16> = Vec::new();
+                        for value in values {
+                            match value {
+                                crate::tokens::DataValue::Number(n) => {
+                                    if n > u16::MAX as u32 {
+                                        panic!("Word value overflow");
+                                    }
+                                    acc.push(n as u16);
+                                },
+                                crate::tokens::DataValue::String(s) => {
+                                    acc.append(&mut s.chars().map(|c| c as u16).collect());
+                                }
+                            }
+                        }
+                        pack_u16_to_u32(acc)
+                    },
+                    crate::tokens::DataType::DoubleWord => {
+                        let mut acc: Vec<u32> = Vec::new();
+                        for value in values {
+                            match value {
+                                crate::tokens::DataValue::Number(n) => {
+                                    acc.push(n);
+                                },
+                                crate::tokens::DataValue::String(s) => {
+                                    acc.append(&mut s.chars().map(|c| c as u32).collect());
+                                }
+                            }
+                        }
+                        acc
+                    },
+                };
+                data_list.push((id, typ, result));
+            },
             crate::tokens::Token::Command(cmd) => {
+                check_section("text", &current_section);
                 match cmd {
                     crate::tokens::Cmd::PushConst(const_value) => {
                         match const_value {
@@ -49,6 +193,41 @@ pub fn compile(code: String) -> CompiledFrame {
                     crate::tokens::Cmd::Inc(reg) => {
                         result.push(combine_hl(Opcode::Inc as u32, OpcodeVariant::Default as u32));
                         result.push(reg);
+                    },
+                    crate::tokens::Cmd::PushIdAddress(id) => {
+                        result.push(combine_hl(Opcode::Push as u32, OpcodeVariant::PushConst as u32));
+                        data_usage.insert(result.len(), (id, 0));
+                        result.push(0);
+                    },
+                    crate::tokens::Cmd::PushIdValueConst(id, offset) => {
+                        result.push(combine_hl(Opcode::Push as u32, OpcodeVariant::PushAddr as u32));
+                        data_usage.insert(result.len(), (id, offset));
+                        result.push(0);
+                    },
+                    crate::tokens::Cmd::PushIdValueReg(id, reg) => {
+                        result.push(combine_hl(Opcode::Push as u32, OpcodeVariant::PushAddrOffsetReg as u32));
+                        data_usage.insert(result.len(), (id, 0));
+                        result.push(0);
+                        result.push(reg);
+                    },
+                    crate::tokens::Cmd::MoveIdAddress(reg, id) => {
+                        result.push(combine_hl(Opcode::Move as u32, OpcodeVariant::MoveConst as u32));
+                        result.push(reg);
+                        data_usage.insert(result.len(), (id, 0));
+                        result.push(0);
+                    },
+                    crate::tokens::Cmd::MoveIdValueConst(reg, id, offset) => {
+                        result.push(combine_hl(Opcode::Move as u32, OpcodeVariant::MoveAddr as u32));
+                        result.push(reg);
+                        data_usage.insert(result.len(), (id, offset));
+                        result.push(0);
+                    },
+                    crate::tokens::Cmd::MoveIdValueReg(reg, id, reg_v) => {
+                        result.push(combine_hl(Opcode::Move as u32, OpcodeVariant::MoveAddrOffsetReg as u32));
+                        result.push(reg);
+                        data_usage.insert(result.len(), (id, 0));
+                        result.push(0);
+                        result.push(reg_v);
                     },
                     crate::tokens::Cmd::Dec(reg) => {
                         result.push(combine_hl(Opcode::Dec as u32, OpcodeVariant::Default as u32));
@@ -112,6 +291,11 @@ pub fn compile(code: String) -> CompiledFrame {
                         result.push(combine_hl(Opcode::Move as u32, OpcodeVariant::MoveAddr as u32));
                         result.push(val);
                         result.push(addr);
+                    },
+                    crate::tokens::Cmd::MoveAddrReg(reg, reg_val) => {
+                        result.push(combine_hl(Opcode::Move as u32, OpcodeVariant::MoveAddrReg as u32));
+                        result.push(reg);
+                        result.push(reg_val);
                     },
                     crate::tokens::Cmd::StoreConst(val, const_value) => {
                         match const_value {
@@ -242,12 +426,22 @@ pub fn compile(code: String) -> CompiledFrame {
                 }
             },
             crate::tokens::Token::Label(label) => {
+                check_section("text", &current_section);
                 labels.insert(label, result.len());
             },
         }
     }
     for (k, v) in label_usage {
         result[k] = labels[v] as u32 + origin;
+    }
+    for (name, _typ, cont) in data_list {
+        let addr = result.len() as u32 + origin;
+        let _len = cont.len();
+        cont.iter().for_each(|v| result.push(*v));
+        data_lookup.insert(name, DataLookup { address: addr as u32 });
+    }
+    for (k, (v, offset)) in data_usage {
+        result[k] = data_lookup[v].address + offset;
     }
     CompiledFrame{
         binary: result,

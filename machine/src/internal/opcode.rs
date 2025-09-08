@@ -90,6 +90,16 @@ pub enum OpcodeVariant {
     DupConst = 0xa018,
     /// duplicate register
     DupReg = 0xa019,
+    /// push address with offset register
+    PushAddrOffsetReg = 0xa01a,
+    /// push address with offset constant
+    PushAddrOffsetConst = 0xa01b,
+    /// move address to register with offset in register
+    MoveAddrOffsetReg = 0xa01c,
+    /// move address to register with offset constant
+    MoveAddrOffsetConst = 0xa01d,
+    /// move address to reg with address stored in another reg
+    MoveAddrReg = 0xa01e,
 }
 
 impl Opcode {
@@ -163,6 +173,11 @@ impl OpcodeVariant {
             x if x == Self::CallAddr as u32 => Ok(Self::CallAddr),
             x if x == Self::DupConst as u32 => Ok(Self::DupConst),
             x if x == Self::DupReg as u32 => Ok(Self::DupReg),
+            x if x == Self::PushAddrOffsetReg as u32 => Ok(Self::PushAddrOffsetReg),
+            x if x == Self::PushAddrOffsetConst as u32 => Ok(Self::PushAddrOffsetConst),
+            x if x == Self::MoveAddrOffsetReg as u32 => Ok(Self::MoveAddrOffsetReg),
+            x if x == Self::MoveAddrOffsetConst as u32 => Ok(Self::MoveAddrOffsetConst),
+            x if x == Self::MoveAddrReg as u32 => Ok(Self::MoveAddrReg),
             _ => Err(VMError::InvalidOpcode)
         }
     }
