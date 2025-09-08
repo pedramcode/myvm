@@ -1,6 +1,7 @@
 [data]
 
 $num dw 5
+$title dw "Factorial result: " 13 10 0
 $msg dw "! = " 0
 $newline dw 10 13 0
 
@@ -9,6 +10,8 @@ $newline dw 10 13 0
 push [$num]
 call .factorial
 
+push $title
+int 0 3
 push [$num]
 int 0 4
 push $msg
