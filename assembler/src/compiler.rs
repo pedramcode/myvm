@@ -88,8 +88,6 @@ pub fn check_section(target: &str, current: &Option<&str>) {
 #[derive(Debug)]
 struct DataLookup {
     pub address: u32,
-    pub typ: DataType,
-    pub len: u32,
 }
 
 pub fn compile(code: String) -> CompiledFrame {
@@ -431,11 +429,11 @@ pub fn compile(code: String) -> CompiledFrame {
     for (k, v) in label_usage {
         result[k] = labels[v] as u32 + origin;
     }
-    for (name, typ, cont) in data_list {
+    for (name, _typ, cont) in data_list {
         let addr = result.len() as u32 + origin;
-        let len = cont.len();
+        let _len = cont.len();
         cont.iter().for_each(|v| result.push(*v));
-        data_lookup.insert(name, DataLookup { address: addr as u32, typ: typ.clone(), len: len as u32 });
+        data_lookup.insert(name, DataLookup { address: addr as u32 });
     }
     for (k, (v, offset)) in data_usage {
         result[k] = data_lookup[v].address + offset;
