@@ -232,6 +232,8 @@ The VM supports registers:
 | `PUSH &10`      | address            | Pushes value from memory address onto the stack           |
 | `PUSH $name`    | data label         | Pushes address of data label to stack                     |
 | `PUSH [$name]`  | data label         | Pushes value of data label to stack                       |
+| `PUSH [$name + 1]`  | data label + offset         | Pushes value of data label with offset to stack                       |
+| `PUSH [$name + r0]`  | data label + offset         | Pushes value of data label with offset in register to stack                       |
 | `POP r1`        | register           | Pops value from stack into a register                     |
 | `POP &32`       | address            | Pops value from stack into a memory address               |
 | `ADD`           | -                  | Pops two values, adds them, pushes result                 |
