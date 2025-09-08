@@ -5,7 +5,7 @@ use nom::{
     combinator::{map, map_res, opt, value},
     error::{Error, ErrorKind},
     multi::separated_list0,
-    sequence::{delimited, pair, preceded},
+    sequence::{delimited, pair, preceded, terminated},
     Err, IResult, Parser,
 };
 
@@ -109,8 +109,8 @@ pub fn parse_id_address(input: &'_ str) -> IResult<&'_ str, Cmd<'_>> {
 
 pub fn parse_id_offset_const(input: &'_ str) -> IResult<&'_ str, DataAddressOffset<'_>> {
     let (rem , id) = preceded(multispace0(),parse_identifier).parse(input)?;
-    let (rem, _) = preceded(multispace1, tag("+")).parse(rem)?;
-    let (rem, number) = preceded(multispace1, parse_number).parse(rem)?;
+    let (rem, _) = preceded(multispace0(), tag("+")).parse(rem)?;
+    let (rem, number) = preceded(multispace0(), parse_number).parse(rem)?;
     Ok((rem, DataAddressOffset::Const(id, number)))
 }
 
@@ -121,8 +121,8 @@ pub fn parse_id_offset_zero(input: &'_ str) -> IResult<&'_ str, DataAddressOffse
 
 pub fn parse_id_offset_reg(input: &'_ str) -> IResult<&'_ str, DataAddressOffset<'_>> {
     let (rem , id) = preceded(multispace0(),parse_identifier).parse(input)?;
-    let (rem, _) = preceded(multispace1, tag("+")).parse(rem)?;
-    let (rem, number) = preceded(multispace1, parse_reg).parse(rem)?;
+    let (rem, _) = preceded(multispace0(), tag("+")).parse(rem)?;
+    let (rem, number) = terminated(preceded(multispace0(), parse_reg), multispace0()).parse(rem)?;
     Ok((rem, DataAddressOffset::Reg(id, number)))
 }
 
