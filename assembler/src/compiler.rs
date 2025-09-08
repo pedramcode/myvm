@@ -103,6 +103,7 @@ pub fn compile(code: String) -> CompiledFrame {
 
     let mut data_list: Vec<(&str, DataType, Vec<u32>)> = Vec::new();
     let mut data_lookup: HashMap<&str, DataLookup> = HashMap::new();
+    let mut data_usage: HashMap<usize, (&str, u32)> = HashMap::new();
 
     for token in tokens {
         match token {
@@ -194,6 +195,41 @@ pub fn compile(code: String) -> CompiledFrame {
                     crate::tokens::Cmd::Inc(reg) => {
                         result.push(combine_hl(Opcode::Inc as u32, OpcodeVariant::Default as u32));
                         result.push(reg);
+                    },
+                    crate::tokens::Cmd::PushIdAddress(id) => {
+                        result.push(combine_hl(Opcode::Push as u32, OpcodeVariant::PushConst as u32));
+                        data_usage.insert(result.len(), (id, 0));
+                        result.push(0);
+                    },
+                    crate::tokens::Cmd::PushIdValueConst(id, offset) => {
+                        result.push(combine_hl(Opcode::Push as u32, OpcodeVariant::PushAddr as u32));
+                        data_usage.insert(result.len(), (id, offset));
+                        result.push(0);
+                    },
+                    crate::tokens::Cmd::PushIdValueReg(id, reg) => {
+                        result.push(combine_hl(Opcode::Push as u32, OpcodeVariant::PushAddrOffsetReg as u32));
+                        data_usage.insert(result.len(), (id, 0));
+                        result.push(0);
+                        result.push(reg);
+                    },
+                    crate::tokens::Cmd::MoveIdAddress(reg, id) => {
+                        result.push(combine_hl(Opcode::Move as u32, OpcodeVariant::MoveConst as u32));
+                        result.push(reg);
+                        data_usage.insert(result.len(), (id, 0));
+                        result.push(0);
+                    },
+                    crate::tokens::Cmd::MoveIdValueConst(reg, id, offset) => {
+                        result.push(combine_hl(Opcode::Move as u32, OpcodeVariant::MoveAddr as u32));
+                        result.push(reg);
+                        data_usage.insert(result.len(), (id, offset));
+                        result.push(0);
+                    },
+                    crate::tokens::Cmd::MoveIdValueReg(reg, id, reg_v) => {
+                        result.push(combine_hl(Opcode::Move as u32, OpcodeVariant::MoveAddrOffsetReg as u32));
+                        result.push(reg);
+                        data_usage.insert(result.len(), (id, 0));
+                        result.push(0);
+                        result.push(reg_v);
                     },
                     crate::tokens::Cmd::Dec(reg) => {
                         result.push(combine_hl(Opcode::Dec as u32, OpcodeVariant::Default as u32));
@@ -400,6 +436,9 @@ pub fn compile(code: String) -> CompiledFrame {
         let len = cont.len();
         cont.iter().for_each(|v| result.push(*v));
         data_lookup.insert(name, DataLookup { address: addr as u32, typ: typ.clone(), len: len as u32 });
+    }
+    for (k, (v, offset)) in data_usage {
+        result[k] = data_lookup[v].address + offset;
     }
     CompiledFrame{
         binary: result,

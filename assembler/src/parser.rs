@@ -9,7 +9,7 @@ use nom::{
     Err, IResult, Parser,
 };
 
-use crate::tokens::{Cmd, ConstValue, DataType, DataValue, MetaType, Token};
+use crate::tokens::{Cmd, ConstValue, DataAddressOffset, DataType, DataValue, MetaType, Token};
 
 // ----------------- Basic parsers -----------------
 
@@ -101,6 +101,71 @@ pub fn parse_data_def(input: &'_ str) -> IResult<&'_ str, Token<'_>> {
     let (rem, typ) = preceded(multispace1, parse_data_type).parse(rem)?;
     let (rem, values) = preceded(multispace1, parse_data_values).parse(rem)?;
     Ok((rem, Token::DataDef(id, typ, values)))
+}
+
+pub fn parse_id_address(input: &'_ str) -> IResult<&'_ str, Cmd<'_>> {
+    map(delimited(tag("["), parse_identifier, tag("]")), Cmd::PushIdAddress).parse(input)
+}
+
+pub fn parse_id_offset_const(input: &'_ str) -> IResult<&'_ str, DataAddressOffset<'_>> {
+    let (rem , id) = preceded(multispace0(),parse_identifier).parse(input)?;
+    let (rem, _) = preceded(multispace1, tag("+")).parse(rem)?;
+    let (rem, number) = preceded(multispace1, parse_number).parse(rem)?;
+    Ok((rem, DataAddressOffset::Const(id, number)))
+}
+
+pub fn parse_id_offset_zero(input: &'_ str) -> IResult<&'_ str, DataAddressOffset<'_>> {
+    let (rem , id) = preceded(multispace0(),parse_identifier).parse(input)?;
+    Ok((rem, DataAddressOffset::Zero(id)))
+}
+
+pub fn parse_id_offset_reg(input: &'_ str) -> IResult<&'_ str, DataAddressOffset<'_>> {
+    let (rem , id) = preceded(multispace0(),parse_identifier).parse(input)?;
+    let (rem, _) = preceded(multispace1, tag("+")).parse(rem)?;
+    let (rem, number) = preceded(multispace1, parse_reg).parse(rem)?;
+    Ok((rem, DataAddressOffset::Reg(id, number)))
+}
+
+pub fn parse_id_address_with_offset(input: &'_ str) -> IResult<&'_ str, DataAddressOffset<'_>> {
+    delimited(
+        tag("["),
+        alt((parse_id_offset_reg, parse_id_offset_const, parse_id_offset_zero)),
+        tag("]")
+    ).parse(input)
+}
+
+pub fn parse_push_id_address(input: &'_ str) -> IResult<&'_ str, Cmd<'_>> {
+    let (rem, _) = tag_no_case("push").parse(input)?;
+    let (rem, id) = preceded(multispace1, parse_identifier).parse(rem)?;
+    Ok((rem, Cmd::PushIdAddress(id)))
+}
+
+pub fn parse_push_id_value(input: &'_ str) -> IResult<&'_ str, Cmd<'_>> {
+    let (rem, _) = tag_no_case("push").parse(input)?;
+    let (rem, val) = preceded(multispace1, parse_id_address_with_offset).parse(rem)?;
+    match val {
+        DataAddressOffset::Zero(id) => Ok((rem, Cmd::PushIdValueConst(id, 0))),
+        DataAddressOffset::Const(id, n) => Ok((rem, Cmd::PushIdValueConst(id, n))),
+        DataAddressOffset::Reg(id, r) => Ok((rem, Cmd::PushIdValueReg(id, r))),
+    }
+}
+
+pub fn parse_move_id_address(input: &'_ str) -> IResult<&'_ str, Cmd<'_>> {
+    let (rem, _) = tag_no_case("move").parse(input)?;
+    let (rem, reg) = preceded(multispace1, parse_reg).parse(rem)?;
+    let (rem, id) = preceded(multispace1, parse_identifier).parse(rem)?;
+    Ok((rem, Cmd::MoveIdAddress(reg, id)))
+}
+
+pub fn parse_move_id_value(input: &'_ str) -> IResult<&'_ str, Cmd<'_>> {
+    let (rem, _) = tag_no_case("move").parse(input)?;
+    let (rem, reg) = preceded(multispace1, parse_reg).parse(rem)?;
+    let (rem, val) = preceded(multispace1, parse_id_address_with_offset).parse(rem)?;
+    match val {
+        DataAddressOffset::Zero(id) => Ok((rem, Cmd::MoveIdValueConst(reg, id, 0))),
+        DataAddressOffset::Const(id, n) => Ok((rem, Cmd::MoveIdValueConst(reg, id, n))),
+        DataAddressOffset::Reg(id, r) => Ok((rem, Cmd::MoveIdValueReg(reg, id, r))),
+    }
 }
 
 // ----------------- Register parser -----------------
@@ -266,7 +331,6 @@ fn parse_int(input: &str) -> IResult<&str, Cmd<'_>> {
 
 pub fn parse_command(input: &str) -> IResult<&str, Cmd<'_>> {
     alt((
-        // First group of 21 parsers
         alt((
             parse_move,
             parse_store,
@@ -290,8 +354,11 @@ pub fn parse_command(input: &str) -> IResult<&str, Cmd<'_>> {
             parse_swap,
             parse_and,
         )),
-        // Second group (remaining parsers)
         alt((
+            parse_push_id_address,
+            parse_push_id_value,
+            parse_move_id_address,
+            parse_move_id_value,
             parse_inc,
             parse_dec,
             parse_int,
@@ -309,6 +376,8 @@ pub fn parse_command(input: &str) -> IResult<&str, Cmd<'_>> {
             parse_ret,
             parse_term,
             parse_mul,
+        )),
+        alt((
             parse_div,
         )),
     ))
