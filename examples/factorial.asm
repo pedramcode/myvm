@@ -34,10 +34,6 @@ term
 
         dec r1
         push r1
-        push 1
-        swap
-        sub
-        push r1
         jg .loop
 
     ret
