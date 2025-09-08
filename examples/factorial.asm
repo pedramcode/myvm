@@ -8,7 +8,7 @@ $newline dw 10 13 0
 [text]
 
 push [$num]
-call .factorial
+safecall .factorial
 
 push $title
 int 0 3

@@ -29,6 +29,7 @@ pub enum Opcode {
     Div = 0xf015,
     Inc = 0xf016,
     Dec = 0xf017,
+    SafeCall = 0xf018,
     Terminate = 0xffff,
 }
 
@@ -100,6 +101,12 @@ pub enum OpcodeVariant {
     MoveAddrOffsetConst = 0xa01d,
     /// move address to reg with address stored in another reg
     MoveAddrReg = 0xa01e,
+    /// call constant address and preserve registers and flags
+    SafeCallConst = 0xa01f,
+    /// call register value address and preserve registers and flags
+    SafeCallReg = 0xa020,
+    /// call address value address and preserve registers and flags
+    SafeCallAddr = 0xa021,
 }
 
 impl Opcode {
@@ -129,6 +136,7 @@ impl Opcode {
             x if x == Self::Div as u32 => Ok(Self::Div),
             x if x == Self::Inc as u32 => Ok(Self::Inc),
             x if x == Self::Dec as u32 => Ok(Self::Dec),
+            x if x == Self::SafeCall as u32 => Ok(Self::SafeCall),
             _ => {
                 return Err(VMError::InvalidOpcode);
             }
@@ -178,6 +186,9 @@ impl OpcodeVariant {
             x if x == Self::MoveAddrOffsetReg as u32 => Ok(Self::MoveAddrOffsetReg),
             x if x == Self::MoveAddrOffsetConst as u32 => Ok(Self::MoveAddrOffsetConst),
             x if x == Self::MoveAddrReg as u32 => Ok(Self::MoveAddrReg),
+            x if x == Self::SafeCallAddr as u32 => Ok(Self::SafeCallAddr),
+            x if x == Self::SafeCallConst as u32 => Ok(Self::SafeCallConst),
+            x if x == Self::SafeCallReg as u32 => Ok(Self::SafeCallReg),
             _ => Err(VMError::InvalidOpcode)
         }
     }

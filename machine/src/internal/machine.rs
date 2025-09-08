@@ -18,6 +18,38 @@ pub struct Machine {
     call_stack: Vec<u32>,
 }
 
+fn preserve_state(machine: &mut Machine) {
+    machine.call_stack.push(machine.register.r0);
+    machine.call_stack.push(machine.register.r1);
+    machine.call_stack.push(machine.register.r2);
+    machine.call_stack.push(machine.register.r3);
+    machine.call_stack.push(machine.register.r4);
+    machine.call_stack.push(machine.register.r5);
+    machine.call_stack.push(machine.register.r6);
+    machine.call_stack.push(machine.register.r7);
+    machine.call_stack.push(if machine.flag.carry {1} else {0});
+    machine.call_stack.push(if machine.flag.negative {1} else {0});
+    machine.call_stack.push(if machine.flag.overflow {1} else {0});
+    machine.call_stack.push(if machine.flag.zero {1} else {0});
+    machine.call_stack.push(0x1998);
+}
+
+fn rollback_state(machine: &mut Machine) {
+    let _ = machine.call_stack.pop(); // 0x1998
+    machine.flag.zero = machine.call_stack.pop().expect("safecall rollback failed") == 1;
+    machine.flag.overflow = machine.call_stack.pop().expect("safecall rollback failed") == 1;
+    machine.flag.negative = machine.call_stack.pop().expect("safecall rollback failed") == 1;
+    machine.flag.carry = machine.call_stack.pop().expect("safecall rollback failed") == 1;
+    machine.register.r7 = machine.call_stack.pop().expect("safecall rollback failed");
+    machine.register.r6 = machine.call_stack.pop().expect("safecall rollback failed");
+    machine.register.r5 = machine.call_stack.pop().expect("safecall rollback failed");
+    machine.register.r4 = machine.call_stack.pop().expect("safecall rollback failed");
+    machine.register.r3 = machine.call_stack.pop().expect("safecall rollback failed");
+    machine.register.r2 = machine.call_stack.pop().expect("safecall rollback failed");
+    machine.register.r1 = machine.call_stack.pop().expect("safecall rollback failed");
+    machine.register.r0 = machine.call_stack.pop().expect("safecall rollback failed");
+}
+
 impl Machine {
     /// creates new virtual machine
     pub fn new(options: MachineOptions) -> Result<Self, VMError> {
@@ -346,7 +378,36 @@ impl Machine {
                 self.register.pc = addr;
                 jumped = true;
             },
+            (Opcode::SafeCall, OpcodeVariant::SafeCallConst) => {
+                self.register.pc += 1;
+                let addr = self.memory.read(self.register.pc)?;
+                self.call_stack.push(self.register.pc);
+                preserve_state(self);
+                self.register.pc = addr;
+                jumped = true;
+            },
+            (Opcode::SafeCall, OpcodeVariant::SafeCallReg) => {
+                self.register.pc += 1;
+                let addr = self.register.get(self.memory.read(self.register.pc)?)?;
+                self.call_stack.push(self.register.pc);
+                preserve_state(self);
+                self.register.pc = addr;
+                jumped = true;
+            },
+            (Opcode::SafeCall, OpcodeVariant::SafeCallAddr) => {
+                self.register.pc += 1;
+                let addr = self.memory.read(self.memory.read(self.register.pc)?)?;
+                self.call_stack.push(self.register.pc);
+                preserve_state(self);
+                self.register.pc = addr;
+                jumped = true;
+            },
             (Opcode::Ret, OpcodeVariant::Default) => {
+                if self.call_stack.len() > 0 {
+                    if self.call_stack[self.call_stack.len() - 1] == 0x1998 {
+                        rollback_state(self);
+                    }
+                }
                 let addr = self.call_stack.pop();
                 if addr.is_none() {
                     return Err(VMError::InvalidReturn);

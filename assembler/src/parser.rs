@@ -216,6 +216,9 @@ fn parse_shl_reg(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("shl", pars
 fn parse_call_const(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("call", parse_const_value, CallConst)(input) }
 fn parse_call_reg(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("call", parse_reg, CallReg)(input) }
 fn parse_call_address(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("call", parse_address, CallAddr)(input) }
+fn parse_safecall_const(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("safecall", parse_const_value, SafeCallConst)(input) }
+fn parse_safecall_reg(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("safecall", parse_reg, SafeCallReg)(input) }
+fn parse_safecall_address(input: &str) -> IResult<&str, Cmd<'_>> { unary_cmd!("safecall", parse_address, SafeCallAddr)(input) }
 
 // ----------------- Keyword commands -----------------
 
@@ -388,6 +391,9 @@ pub fn parse_command(input: &str) -> IResult<&str, Cmd<'_>> {
         alt((
             parse_div,
             parse_move_addr_reg,
+            parse_safecall_const,
+            parse_safecall_address,
+            parse_safecall_reg,
         )),
     ))
     .parse(input)

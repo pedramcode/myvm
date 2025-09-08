@@ -401,6 +401,27 @@ pub fn compile(code: String) -> CompiledFrame {
                         result.push(combine_hl(Opcode::Call as u32, OpcodeVariant::CallAddr as u32));
                         result.push(addr);
                     },
+                    crate::tokens::Cmd::SafeCallConst(const_value) => {
+                        match const_value {
+                            crate::tokens::ConstValue::Number(val) => {
+                                result.push(combine_hl(Opcode::SafeCall as u32, OpcodeVariant::SafeCallConst as u32));
+                                result.push(val);
+                            },
+                            crate::tokens::ConstValue::Label(label) => {
+                                result.push(combine_hl(Opcode::SafeCall as u32, OpcodeVariant::SafeCallConst as u32));
+                                label_usage.insert(result.len(), label);
+                                result.push(0);
+                            },
+                        }
+                    },
+                    crate::tokens::Cmd::SafeCallReg(reg) => {
+                        result.push(combine_hl(Opcode::SafeCall as u32, OpcodeVariant::SafeCallReg as u32));
+                        result.push(reg);
+                    },
+                    crate::tokens::Cmd::SafeCallAddr(addr) => {
+                        result.push(combine_hl(Opcode::SafeCall as u32, OpcodeVariant::SafeCallAddr as u32));
+                        result.push(addr);
+                    },
                     crate::tokens::Cmd::Ret => {
                         result.push(combine_hl(Opcode::Ret as u32, OpcodeVariant::Default as u32));
                     },

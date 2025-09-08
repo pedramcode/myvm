@@ -273,6 +273,10 @@ The VM supports registers:
 | `CALL .label`   | label              | Calls procedure by label                                  |
 | `CALL r0`       | register           | Calls procedure at address in register                    |
 | `CALL &323`     | address            | Calls procedure at memory address                         |
+| `SAFECALL 32`       | address            | Calls procedure at address and preserve machine state (registers and flags)                                |
+| `SAFECALL .label`   | label              | Calls procedure by label and preserve machine state (registers and flags)                                  |
+| `SAFECALL r0`       | register           | Calls procedure at address in register and preserve machine state (registers and flags)                   |
+| `SAFECALL &323`     | address            | Calls procedure at memory address and preserve machine state (registers and flags)                        |
 | `RET`           | -                  | Returns from procedure                                    |
 | `DUP`           | -                  | Duplicates top stack item                                 |
 | `DUP 10`        | number             | Duplicates top stack item `n` times                       |
