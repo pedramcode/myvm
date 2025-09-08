@@ -311,6 +311,7 @@ INT module_number function_number
 | 1        | Pops number `n` from stack, then pops `n` items and prints them                |
 | 2        | Pops a stop value, then continuously pops and prints until reaching stop value |
 | 3        | Pops address of string in [data] and prints it until reaching 0                |
+| 4        | Pops number from stack and prints it as string                                 |
 
 Interrupts provide a bridge between VM code and system-level functions without complicating the instruction set.
 

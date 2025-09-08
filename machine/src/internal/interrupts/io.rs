@@ -38,3 +38,9 @@ pub fn print_data_string_function(machine: &mut Machine) -> Result<(), VMError> 
         addr += 1;
     })
 }
+
+pub fn print_number_function(machine: &mut Machine) -> Result<(), VMError> {
+    let number = machine.memory.pop()?;
+    print!("{}", number);
+    Ok(())
+}
