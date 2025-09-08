@@ -18,6 +18,66 @@ pub struct Machine {
     call_stack: Vec<u32>,
 }
 
+fn pack_u16_to_u32(v: Vec<u16>) -> Vec<u32> {
+    let mut out = Vec::with_capacity((v.len() + 1) / 2);
+
+    let mut iter = v.into_iter();
+    while let Some(high) = iter.next() {
+        if let Some(low) = iter.next() {
+            // pack two u16 into u32
+            let packed = ((high as u32) << 16) | (low as u32);
+            out.push(packed);
+        } else {
+            // odd one out → shift into high 16 bits, low filled with zeros
+            let packed = (high as u32) << 16;
+            out.push(packed);
+        }
+    }
+
+    out
+}
+
+fn pack_u8_to_u32(v: Vec<u8>) -> Vec<u32> {
+    let mut out = Vec::with_capacity((v.len() + 3) / 4);
+
+    let mut iter = v.into_iter();
+    while let Some(b1) = iter.next() {
+        if let Some(b2) = iter.next() {
+            if let Some(b3) = iter.next() {
+                if let Some(b4) = iter.next() {
+                    // full 4 bytes
+                    let packed = ((b1 as u32) << 24)
+                               | ((b2 as u32) << 16)
+                               | ((b3 as u32) << 8)
+                               |  (b4 as u32);
+                    out.push(packed);
+                    continue;
+                } else {
+                    // 3 bytes
+                    let packed = ((b1 as u32) << 24)
+                               | ((b2 as u32) << 16)
+                               | ((b3 as u32) << 8);
+                    out.push(packed);
+                    break;
+                }
+            } else {
+                // 2 bytes
+                let packed = ((b1 as u32) << 24)
+                           | ((b2 as u32) << 16);
+                out.push(packed);
+                break;
+            }
+        } else {
+            // only 1 byte
+            let packed = (b1 as u32) << 24;
+            out.push(packed);
+            break;
+        }
+    }
+
+    out
+}
+
 impl Machine {
     /// creates new virtual machine
     pub fn new(options: MachineOptions) -> Result<Self, VMError> {

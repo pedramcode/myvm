@@ -61,4 +61,5 @@ pub enum Token<'a> {
     Meta(MetaType<'a>),
     Command(Cmd<'a>),
     Label(&'a str),
+    Section(&'a str),
 }

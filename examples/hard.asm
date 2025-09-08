@@ -1,5 +1,7 @@
 @org 10
 
+[text]
+
 PUSH 10
 PUSH 13
 PUSH 33

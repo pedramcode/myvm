@@ -1,5 +1,7 @@
 @org 0
 
+[text]
+
 push 123456
 call .split
 TERM

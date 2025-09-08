@@ -14,6 +14,16 @@ pub struct CompiledFrame {
     pub binary: Vec<u32>,
 }
 
+pub fn check_section(target: &str, current: &Option<&str>) {
+    if let Some(s) = current {
+        if target.to_lowercase() != (*s).to_lowercase() {
+            panic!("invalid code for section '{}'", *s);
+        }
+    } else {
+        panic!("invalid code for section");
+    }
+}
+
 pub fn compile(code: String) -> CompiledFrame {
     let mut result: Vec<u32> = Vec::new();
     let mut origin: u32 = 0;
@@ -21,6 +31,8 @@ pub fn compile(code: String) -> CompiledFrame {
     let mut label_usage = HashMap::<usize, &str>::new();
     let mut labels = HashMap::<&str, usize>::new();
     let (_, tokens) = parse_program(content).unwrap();
+    let mut current_section:Option<&str> = None;
+
     for token in tokens {
         match token {
             crate::tokens::Token::Meta(meta_type) => {
@@ -31,7 +43,15 @@ pub fn compile(code: String) -> CompiledFrame {
                     crate::tokens::MetaType::Include(_) => {},
                 }
             },
+            crate::tokens::Token::Section(sec) => {
+                if sec.to_lowercase() == "text" || sec.to_lowercase() == "data" {
+                    current_section = Some(sec);
+                } else {
+                    panic!("invalid section '{}'", sec);
+                }
+            },
             crate::tokens::Token::Command(cmd) => {
+                check_section("text", &current_section);
                 match cmd {
                     crate::tokens::Cmd::PushConst(const_value) => {
                         match const_value {
@@ -242,6 +262,7 @@ pub fn compile(code: String) -> CompiledFrame {
                 }
             },
             crate::tokens::Token::Label(label) => {
+                check_section("text", &current_section);
                 labels.insert(label, result.len());
             },
         }

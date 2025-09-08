@@ -68,6 +68,10 @@ pub fn parse_meta(input: &str) -> IResult<&str, MetaType<'_>> {
     }
 }
 
+pub fn parse_section(input: &str) -> IResult<&str, &str> {
+    delimited(tag("["), alphanumeric1, tag("]")).parse(input)
+}
+
 // ----------------- Register parser -----------------
 
 pub fn parse_reg(input: &str) -> IResult<&str, u32> {
@@ -291,6 +295,7 @@ pub fn parse_token(input: &str) -> IResult<&str, Token<'_>> {
         map(parse_label, Token::Label),
         map(parse_meta, Token::Meta),
         map(parse_command, Token::Command),
+        map(parse_section, Token::Section),
     ))
     .parse(input)
 }
