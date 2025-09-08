@@ -85,6 +85,13 @@ pub fn check_section(target: &str, current: &Option<&str>) {
     }
 }
 
+#[derive(Debug)]
+struct DataLookup {
+    pub address: u32,
+    pub typ: DataType,
+    pub len: u32,
+}
+
 pub fn compile(code: String) -> CompiledFrame {
     let mut result: Vec<u32> = Vec::new();
     let mut origin: u32 = 0;
@@ -95,6 +102,7 @@ pub fn compile(code: String) -> CompiledFrame {
     let mut current_section:Option<&str> = None;
 
     let mut data_list: Vec<(&str, DataType, Vec<u32>)> = Vec::new();
+    let mut data_lookup: HashMap<&str, DataLookup> = HashMap::new();
 
     for token in tokens {
         match token {
@@ -387,10 +395,11 @@ pub fn compile(code: String) -> CompiledFrame {
     for (k, v) in label_usage {
         result[k] = labels[v] as u32 + origin;
     }
-    for (_name, _typ, cont) in data_list {
-        let _addr = result.len();
-        let _len = cont.len();
+    for (name, typ, cont) in data_list {
+        let addr = result.len();
+        let len = cont.len();
         cont.iter().for_each(|v| result.push(*v));
+        data_lookup.insert(name, DataLookup { address: addr as u32, typ: typ.clone(), len: len as u32 });
     }
     CompiledFrame{
         binary: result,
