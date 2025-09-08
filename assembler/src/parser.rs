@@ -1,15 +1,15 @@
 use nom::{
     branch::alt,
     bytes::complete::{tag, tag_no_case, take_till, take_until, take_while1},
-    character::complete::{alphanumeric1, char, digit1, line_ending, multispace1, space0},
-    combinator::{map, map_res, opt},
+    character::{complete::{alphanumeric1, char, digit1, line_ending, multispace1, space0}, multispace0},
+    combinator::{map, map_res, opt, value},
     error::{Error, ErrorKind},
     multi::separated_list0,
     sequence::{delimited, pair, preceded},
     Err, IResult, Parser,
 };
 
-use crate::tokens::{Cmd, ConstValue, MetaType, Token};
+use crate::tokens::{Cmd, ConstValue, DataType, DataValue, MetaType, Token};
 
 // ----------------- Basic parsers -----------------
 
@@ -70,6 +70,37 @@ pub fn parse_meta(input: &str) -> IResult<&str, MetaType<'_>> {
 
 pub fn parse_section(input: &str) -> IResult<&str, &str> {
     delimited(tag("["), alphanumeric1, tag("]")).parse(input)
+}
+
+
+
+// -----------------      Data       -----------------
+
+
+pub fn parse_data_type(input: &str) -> IResult<&str, DataType> {
+    alt((
+        value(DataType::Byte, tag_no_case("b")),
+        value(DataType::Word, tag_no_case("w")),
+        value(DataType::DoubleWord, tag_no_case("dw")),
+    )).parse(input)
+}
+
+pub fn parse_data_values(input: &'_ str) -> IResult<&'_ str, Vec<DataValue<'_>>> {
+    separated_list0(multispace1, alt((
+        map(parse_number, DataValue::Number),
+        map(parse_str, DataValue::String),
+    ))).parse(input)
+}
+
+pub fn parse_identifier(input: &str) -> IResult<&str, &str> {
+    preceded(tag("$"), alphanumeric1).parse(input)
+}
+
+pub fn parse_data_def(input: &'_ str) -> IResult<&'_ str, Token<'_>> {
+    let (rem, id) = preceded(multispace0(), parse_identifier).parse(input)?;
+    let (rem, typ) = preceded(multispace1, parse_data_type).parse(rem)?;
+    let (rem, values) = preceded(multispace1, parse_data_values).parse(rem)?;
+    Ok((rem, Token::DataDef(id, typ, values)))
 }
 
 // ----------------- Register parser -----------------
@@ -285,9 +316,6 @@ pub fn parse_command(input: &str) -> IResult<&str, Cmd<'_>> {
 }
 
 
-
-
-
 // ----------------- Line / Token / Program -----------------
 
 pub fn parse_token(input: &str) -> IResult<&str, Token<'_>> {
@@ -296,6 +324,7 @@ pub fn parse_token(input: &str) -> IResult<&str, Token<'_>> {
         map(parse_meta, Token::Meta),
         map(parse_command, Token::Command),
         map(parse_section, Token::Section),
+        parse_data_def,
     ))
     .parse(input)
 }

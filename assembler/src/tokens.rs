@@ -11,6 +11,19 @@ pub enum ConstValue<'a> {
 }
 
 #[derive(Debug, Clone)]
+pub enum DataType {
+    Byte,
+    Word,
+    DoubleWord,
+}
+
+#[derive(Debug, Clone)]
+pub enum DataValue<'a> {
+    Number(u32),
+    String(&'a str),
+}
+
+#[derive(Debug, Clone)]
 pub enum Cmd<'a> {
     PushConst(ConstValue<'a>),
     PushReg(u32),
@@ -62,4 +75,5 @@ pub enum Token<'a> {
     Command(Cmd<'a>),
     Label(&'a str),
     Section(&'a str),
+    DataDef(&'a str, DataType, Vec<DataValue<'a>>),
 }
