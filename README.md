@@ -139,12 +139,12 @@ Writing code in the `[data]` section or defining data in the `[text]` section wi
 Example:
 ```asm
 [data]
-$name b "Pedram"
+$name dw "Pedram" 0
 $scores w 0x2301 0x1212 19 20
 
 [text]
 PUSH $name
-INT 0 0
+INT 0 3
 TERM
 ```
 
@@ -310,6 +310,7 @@ INT module_number function_number
 | 0        | Pops top of stack and prints it                                                |
 | 1        | Pops number `n` from stack, then pops `n` items and prints them                |
 | 2        | Pops a stop value, then continuously pops and prints until reaching stop value |
+| 3        | Pops address of string in [data] and prints it until reaching 0                |
 
 Interrupts provide a bridge between VM code and system-level functions without complicating the instruction set.
 
@@ -365,20 +366,15 @@ TERM
 
 ```asm
 [data]
-$hello b "Hello World!" 0  ; Null-terminated string
-$newline b 10 13           ; Newline characters
+
+$hello dw "Hello World!" 10 13 0
 
 [text]
-@org 0x100
 
-PUSH $hello
-INT 0 1        ; Print string
+push $hello
+int 0 3
+term
 
-PUSH 2
-PUSH $newline  
-INT 0 1        ; Print newline
-
-TERM
 ```
 
 ## Hexdump
