@@ -396,7 +396,7 @@ pub fn compile(code: String) -> CompiledFrame {
         result[k] = labels[v] as u32 + origin;
     }
     for (name, typ, cont) in data_list {
-        let addr = result.len();
+        let addr = result.len() as u32 + origin;
         let len = cont.len();
         cont.iter().for_each(|v| result.push(*v));
         data_lookup.insert(name, DataLookup { address: addr as u32, typ: typ.clone(), len: len as u32 });
