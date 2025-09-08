@@ -150,23 +150,6 @@ pub fn parse_push_id_value(input: &'_ str) -> IResult<&'_ str, Cmd<'_>> {
     }
 }
 
-pub fn parse_move_id_address(input: &'_ str) -> IResult<&'_ str, Cmd<'_>> {
-    let (rem, _) = tag_no_case("move").parse(input)?;
-    let (rem, reg) = preceded(multispace1, parse_reg).parse(rem)?;
-    let (rem, id) = preceded(multispace1, parse_identifier).parse(rem)?;
-    Ok((rem, Cmd::MoveIdAddress(reg, id)))
-}
-
-pub fn parse_move_id_value(input: &'_ str) -> IResult<&'_ str, Cmd<'_>> {
-    let (rem, _) = tag_no_case("move").parse(input)?;
-    let (rem, reg) = preceded(multispace1, parse_reg).parse(rem)?;
-    let (rem, val) = preceded(multispace1, parse_id_address_with_offset).parse(rem)?;
-    match val {
-        DataAddressOffset::Zero(id) => Ok((rem, Cmd::MoveIdValueConst(reg, id, 0))),
-        DataAddressOffset::Const(id, n) => Ok((rem, Cmd::MoveIdValueConst(reg, id, n))),
-        DataAddressOffset::Reg(id, r) => Ok((rem, Cmd::MoveIdValueReg(reg, id, r))),
-    }
-}
 
 // ----------------- Register parser -----------------
 
@@ -305,11 +288,36 @@ fn parse_move(input: &str) -> IResult<&str, Cmd<'_>> {
     Ok((rem, Cmd::MoveConst(dest, src)))
 }
 
+fn parse_move_addr_reg(input: &str) -> IResult<&str, Cmd<'_>> {
+    let (rem, _) = tag_no_case("move").parse(input)?;
+    let (rem, dest) = delimited(multispace1, parse_reg, multispace1).parse(rem)?;  // Changed from parse_number to parse_reg
+    let (rem, src) = preceded(tag("&"), parse_reg).parse(rem)?;
+    Ok((rem, Cmd::MoveAddrReg(dest, src)))
+}
+
 fn parse_store(input: &str) -> IResult<&str, Cmd<'_>> {
     let (rem, _) = tag_no_case("store").parse(input)?;
     let (rem, dest) = delimited(multispace1, parse_number, multispace1).parse(rem)?;
     let (rem, src) = parse_number_or_const(rem)?;
     Ok((rem, Cmd::StoreConst(dest, src)))
+}
+
+pub fn parse_move_id_address(input: &'_ str) -> IResult<&'_ str, Cmd<'_>> {
+    let (rem, _) = tag_no_case("move").parse(input)?;
+    let (rem, reg) = preceded(multispace1, parse_reg).parse(rem)?;
+    let (rem, id) = preceded(multispace1, parse_identifier).parse(rem)?;
+    Ok((rem, Cmd::MoveIdAddress(reg, id)))
+}
+
+pub fn parse_move_id_value(input: &'_ str) -> IResult<&'_ str, Cmd<'_>> {
+    let (rem, _) = tag_no_case("move").parse(input)?;
+    let (rem, reg) = preceded(multispace1, parse_reg).parse(rem)?;
+    let (rem, val) = preceded(multispace1, parse_id_address_with_offset).parse(rem)?;
+    match val {
+        DataAddressOffset::Zero(id) => Ok((rem, Cmd::MoveIdValueConst(reg, id, 0))),
+        DataAddressOffset::Const(id, n) => Ok((rem, Cmd::MoveIdValueConst(reg, id, n))),
+        DataAddressOffset::Reg(id, r) => Ok((rem, Cmd::MoveIdValueReg(reg, id, r))),
+    }
 }
 
 // -----------------           INT            -----------------
@@ -379,6 +387,7 @@ pub fn parse_command(input: &str) -> IResult<&str, Cmd<'_>> {
         )),
         alt((
             parse_div,
+            parse_move_addr_reg,
         )),
     ))
     .parse(input)

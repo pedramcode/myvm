@@ -98,6 +98,8 @@ pub enum OpcodeVariant {
     MoveAddrOffsetReg = 0xa01c,
     /// move address to register with offset constant
     MoveAddrOffsetConst = 0xa01d,
+    /// move address to reg with address stored in another reg
+    MoveAddrReg = 0xa01e,
 }
 
 impl Opcode {
@@ -175,6 +177,7 @@ impl OpcodeVariant {
             x if x == Self::PushAddrOffsetConst as u32 => Ok(Self::PushAddrOffsetConst),
             x if x == Self::MoveAddrOffsetReg as u32 => Ok(Self::MoveAddrOffsetReg),
             x if x == Self::MoveAddrOffsetConst as u32 => Ok(Self::MoveAddrOffsetConst),
+            x if x == Self::MoveAddrReg as u32 => Ok(Self::MoveAddrReg),
             _ => Err(VMError::InvalidOpcode)
         }
     }

@@ -161,6 +161,13 @@ impl Machine {
                 let value = self.memory.read(self.register.pc)?;
                 self.register.set(reg, self.memory.read(value)?)?;
             },
+            (Opcode::Move, OpcodeVariant::MoveAddrReg) => {
+                self.register.pc += 1;
+                let reg = self.memory.read(self.register.pc)?;
+                self.register.pc += 1;
+                let value = self.register.get(self.memory.read(self.register.pc)?)?;
+                self.register.set(reg, self.memory.read(value)?)?;
+            },
             (Opcode::Move, OpcodeVariant::MoveAddrOffsetConst) => {
                 self.register.pc += 1;
                 let reg = self.memory.read(self.register.pc)?;

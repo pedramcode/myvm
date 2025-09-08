@@ -47,6 +47,7 @@ pub enum Cmd<'a> {
     MoveConst(u32, ConstValue<'a>),
     MoveReg(u32, u32),
     MoveAddr(u32, u32),
+    MoveAddrReg(u32, u32),
     MoveIdAddress(u32, &'a str),
     MoveIdValueConst(u32, &'a str, u32),
     MoveIdValueReg(u32, &'a str, u32),

@@ -292,6 +292,11 @@ pub fn compile(code: String) -> CompiledFrame {
                         result.push(val);
                         result.push(addr);
                     },
+                    crate::tokens::Cmd::MoveAddrReg(reg, reg_val) => {
+                        result.push(combine_hl(Opcode::Move as u32, OpcodeVariant::MoveAddrReg as u32));
+                        result.push(reg);
+                        result.push(reg_val);
+                    },
                     crate::tokens::Cmd::StoreConst(val, const_value) => {
                         match const_value {
                             crate::tokens::ConstValue::Number(n) => {
