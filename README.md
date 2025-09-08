@@ -9,6 +9,8 @@
     - [2. Registers](#2-registers)
     - [3. Flags](#3-flags)
 - [📝 VM Assembly Syntax and Commands](#-vm-assembly-syntax-and-commands)
+  - [Sections](#sections)
+  - [Data Definitions](#data-definitions)
   - [Numbers](#numbers)
   - [Memory Addresses](#memory-addresses)
   - [Metas](#metas)
@@ -125,6 +127,71 @@ The VM uses a **custom assembly language** for programming, supporting constants
 
 ---
 
+### Sections
+
+Programs must be organized into sections using `[section_name]` tags. There are two mandatory sections:
+
+- `[text]` - Contains executable code
+- `[data]` - Contains data definitions and constants
+
+Writing code in the `[data]` section or defining data in the `[text]` section will result in an error.
+
+Example:
+```asm
+[data]
+$name b "Pedram"
+$scores w 0x2301 0x1212 19 20
+
+[text]
+PUSH $name
+INT 0 0
+TERM
+```
+
+### Data Definitions
+
+Data can be defined in the `[data]` section using the following syntax:
+
+```
+$[identifier] [data type] [... data separated with space ...]
+```
+
+Supported data types:
+- `b` - Byte: stores data in 1-byte arrays
+- `w` - Word: stores data in 2-byte arrays  
+- `dw` - Double Word: stores data in 4-byte arrays
+
+Examples:
+```asm
+[data]
+$name b "Pedram"
+$scores w 0x2301 0x1212 19 20
+$data dw 0xaaaaaaaa 0xbbbbbbbb
+```
+
+**Note on memory storage**: Each memory cell is 32-bit (4 bytes). When using `b` or `w` types, data is packed into memory cells at the bit level. For example:
+- `b 0xaa 0xbb 0xcc` stores as: `0xaabbcc00`
+- `w 0xaabb 0xcc` stores as: `0xaabbcc00`
+
+### Enhanced Memory Access Syntax
+
+The following syntax is supported for accessing data:
+
+```asm
+; Push operations
+push $name        ; pushes $name address to stack
+push [$name]      ; pushes $name value to stack  
+push [$name + 4]  ; pushes $name value with offset to stack
+push [$name + r0] ; pushes $name value with offset stored in register to stack
+
+; Move operations
+move r0 $name        ; move address of $name into register r0
+move r0 [$name]      ; move value of $name into register r0
+move r0 [$name + 2]  ; move value of $name with offset into register r0
+move r0 [$name + r1] ; move value of $name with offset stored in r1 into register r0
+move r0 &r1          ; move value of data that its address stored in register r1 to r0
+```
+
 ### Numbers
 - **Decimal:** `42`  
 - **Hexadecimal:** `0x2A`  
@@ -163,6 +230,8 @@ The VM supports registers:
 | `PUSH 10`       | number             | Pushes a constant number to the stack                     |
 | `PUSH r0`       | register           | Pushes value of a register onto the stack                 |
 | `PUSH &10`      | address            | Pushes value from memory address onto the stack           |
+| `PUSH $name`    | data label         | Pushes address of data label to stack                     |
+| `PUSH [$name]`  | data label         | Pushes value of data label to stack                       |
 | `POP r1`        | register           | Pops value from stack into a register                     |
 | `POP &32`       | address            | Pops value from stack into a memory address               |
 | `ADD`           | -                  | Pops two values, adds them, pushes result                 |
@@ -175,7 +244,12 @@ The VM supports registers:
 | `DEC r0 `       | register           | decrease register by 1                                    |
 | `MOVE r0 10`    | register, value    | Moves constant into register                              |
 | `MOVE r0 r1`    | register, register | Moves value from one register to another                  |
-| `MOVE r1 &12`   | register, address  | Moves value from memory address to register               |
+| `MOVE r0 &12`   | register, address  | Moves value from memory address to register               |
+| `MOVE r0 $name` | register, data     | Moves address of data label to register                   |
+| `MOVE r0 [$name]` | register, data   | Moves value of data label to register                     |
+| `MOVE r0 [$name + 2]` | register, data | Moves value of data label with offset to register       |
+| `MOVE r0 [$name + r1]` | register, data | Moves value of data label with register offset to register |
+| `MOVE r0 &r1`   | register, register | Moves value from address in register to register          |
 | `STORE 1010 32` | address, value     | Stores constant into memory                               |
 | `STORE 1010 r3` | address, register  | Stores register value into memory                         |
 | `JMP .label`    | label              | Unconditional jump                                        |
@@ -187,7 +261,7 @@ The VM supports registers:
 | `JLE .label`    | label              | Jump if less or equal                                     |
 | `AND`           | -                  | Pops two values, bitwise AND, pushes result               |
 | `OR`            | -                  | Pops two values, bitwise OR, pushes result                |
-| `XOR`           | -                  | Pops two values, bitwise XOR, pushes result               |
+| `XOR`           | -                  | Pops two values, bitwise XOR, pushes result                |
 | `NOT`           | -                  | Pops one value, bitwise NOT, pushes result                |
 | `SHR 10`        | value              | Pops value, shifts right by constant, pushes result       |
 | `SHR r3`        | value              | Pops value, shifts right by register value, pushes result |
@@ -281,6 +355,26 @@ PUSH 72
 PUSH 10
 
 INT 0 2
+
+TERM
+```
+
+## Hello World! (Using data section)
+
+```asm
+[data]
+$hello b "Hello World!" 0  ; Null-terminated string
+$newline b 10 13           ; Newline characters
+
+[text]
+@org 0x100
+
+PUSH $hello
+INT 0 1        ; Print string
+
+PUSH 2
+PUSH $newline  
+INT 0 1        ; Print newline
 
 TERM
 ```

@@ -10,10 +10,6 @@ $message b "Hello World! This is a test!" 0
 
 [text]
 
-move r1 0
-push [$name + r1]
-move r2 $name
-move r3 &r2
-push r3
+push $year
 
 term
