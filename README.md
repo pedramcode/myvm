@@ -477,6 +477,7 @@ Options:
 | `-p, --path`  | Path to the binary file                 | —       |
 | `-c, --cells` | Number of memory cells in the VM        | 2048    |
 | `-s, --stack` | Number of cells allocated for the stack | 256     |
+| `-d, --dump`  | Dumps the VM's memory layout to stdout  | false   |
 
 How it works:
 
