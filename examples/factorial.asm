@@ -7,6 +7,8 @@ $newline dw 10 13 0
 
 [text]
 
+.start
+
 push $title
 int 0 3
 

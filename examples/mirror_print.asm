@@ -2,6 +2,8 @@
 
 [text]
 
+.start
+
 push 123456
 call .split
 TERM

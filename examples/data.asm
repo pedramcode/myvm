@@ -2,6 +2,8 @@
 
 [data]
 
+.start
+
 $name b "Pedram" 0
 $year w 1998
 $scores w 20 15 13 20 19 13 10

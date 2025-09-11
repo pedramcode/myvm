@@ -12,6 +12,7 @@ fn combine_hl(high: u32, low: u32) -> u32 {
 pub struct CompiledFrame {
     pub origin: u32,
     pub binary: Vec<u32>,
+    pub start: Option<u32>,
 }
 
 fn pack_u16_to_u32(v: Vec<u16>) -> Vec<u32> {
@@ -102,6 +103,7 @@ pub fn compile(code: String) -> CompiledFrame {
     let mut data_list: Vec<(&str, DataType, Vec<u32>)> = Vec::new();
     let mut data_lookup: HashMap<&str, DataLookup> = HashMap::new();
     let mut data_usage: HashMap<usize, (&str, u32)> = HashMap::new();
+    let mut start_pos: Option<u32> = None;
 
     for token in tokens {
         match token {
@@ -175,6 +177,7 @@ pub fn compile(code: String) -> CompiledFrame {
                 data_list.push((id, typ, result));
             },
             crate::tokens::Token::Command(cmd) => {
+                if start_pos.is_none() { continue; }
                 check_section("text", &current_section);
                 match cmd {
                     crate::tokens::Cmd::PushConst(const_value) => {
@@ -447,8 +450,16 @@ pub fn compile(code: String) -> CompiledFrame {
                 }
             },
             crate::tokens::Token::Label(label) => {
-                check_section("text", &current_section);
-                labels.insert(label, result.len());
+                if label == "start" && start_pos.is_none() {
+                    start_pos = Some(result.len() as u32);
+                    labels.insert(label, result.len());
+                } else {
+                    if label == "start" {
+                        panic!("there should only be one 'start' label in code");
+                    }
+                    check_section("text", &current_section);
+                    labels.insert(label, result.len());
+                }
             },
         }
     }
@@ -464,8 +475,12 @@ pub fn compile(code: String) -> CompiledFrame {
     for (k, (v, offset)) in data_usage {
         result[k] = data_lookup[v].address + offset;
     }
+    if start_pos.is_none() {
+        panic!("no '.start' label found");
+    }
     CompiledFrame{
         binary: result,
         origin: origin,
+        start: start_pos,
     }
 }
