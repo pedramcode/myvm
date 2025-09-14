@@ -1,253 +1,220 @@
-# MyVM Assembly Language Tutorial
+# MyVM Tutorial
 
-## Table of Contents
-1. [Introduction](#introduction)
-2. [Memory and Stack](#memory-and-stack)
-3. [Registers](#registers)
-4. [Flags](#flags)
-5. [Opcodes and Variants](#opcodes-and-variants)
-6. [Assembly Syntax](#assembly-syntax)
-7. [Examples](#examples)
+*A Stack-Based Virtual Machine and Assembly Language Guide*
 
-## Introduction
+---
 
-MyVM is a stack-based virtual machine with 32-bit memory cells and registers. Programs are executed by pushing values onto the stack, performing operations, and storing results. This tutorial covers the assembly language syntax and provides examples.
+## 1. Introduction
 
-## Memory and Stack
+**MyVM** is a custom **stack-based virtual machine** designed with simplicity and flexibility in mind.
+It operates on a **32-bit architecture**, where each memory cell and register is `u32` (4 bytes).
 
-- Memory consists of 32-bit (4-byte) cells
-- Stack grows backwards from the end of memory
-- Stack size is defined when VM starts
-- Stack overflow occurs when pushing beyond stack limit
-- Stack underflow occurs when popping from empty stack
+Key features include:
 
-## Registers
+* Stack-based execution model (stack grows backwards in memory).
+* 9 registers (`r0`–`r7` and `pc`).
+* Flags for conditional execution.
+* A separate call stack supporting both **regular calls** and **safe calls**.
+* Rich instruction set with arithmetic, logic, control flow, and memory operations.
+* Custom assembly language for programming MyVM.
 
-| Register | Address | Purpose           |
-|----------|---------|-------------------|
-| r0       | 0       | General purpose   |
-| r1       | 1       | General purpose   |
-| r2       | 2       | General purpose   |
-| r3       | 3       | General purpose   |
-| r4       | 4       | General purpose   |
-| r5       | 5       | General purpose   |
-| r6       | 6       | General purpose   |
-| r7       | 7       | General purpose   |
-| pc       | 100     | Program counter   |
+This tutorial explains MyVM step by step with examples.
 
-## Flags
+---
 
-Flags are set based on operation results:
-- `zero`: Result was zero
-- `negative`: Result was negative
-- `overflow`: Arithmetic overflow occurred
-- `carry`: Arithmetic carry occurred
+## 2. Architecture Overview
 
-## Opcodes and Variants
+### 2.1 Memory
 
-### Main Opcodes
-```plaintext
-Push = 0xf001
-Pop = 0xf002
-Add = 0xf003
-Sub = 0xf004
-Swap = 0xf005
-Move = 0xf006
-Store = 0xf007
-Jump = 0xf008
-And = 0xf009
-Or = 0xf00a
-Xor = 0xf00b
-Not = 0xf00c
-SHR = 0xf00d
-SHL = 0xf00e
-Call = 0xf00f
-Ret = 0xf010
-Dup = 0xf011
-Int = 0xf012
-Drop = 0xf013
-Mul = 0xf014
-Div = 0xf015
-Inc = 0xf016
-Dec = 0xf017
-SafeCall = 0xf018
-Terminate = 0xffff
+* Memory is an array of `u32` values.
+* The **stack** is located at the end of memory and **grows backwards**.
+* Stack operations must remain within the defined stack size:
+
+  * **Stack Overflow**: pushing beyond limit.
+  * **Stack Underflow**: popping from empty stack.
+
+### 2.2 Registers
+
+MyVM provides **9 registers**, each 32-bit wide:
+
+| Register  | Purpose                                      | Address |
+| --------- | -------------------------------------------- | ------- |
+| `r0`      | General purpose                              | 0       |
+| `r1`      | General purpose                              | 1       |
+| `r2`      | General purpose                              | 2       |
+| `r3`      | General purpose (used as remainder in `DIV`) | 3       |
+| `r4`–`r7` | General purpose                              | 4–7     |
+| `pc`      | Program counter                              | 100     |
+
+### 2.3 Flags
+
+Execution updates **flags** that affect conditional jumps:
+
+* `zero` → result equals 0.
+* `negative` → result is negative (for signed interpretation).
+* `overflow` → arithmetic overflow occurred.
+* `carry` → carry/borrow occurred in arithmetic.
+
+### 2.4 Call Stack
+
+MyVM maintains a separate **call stack** for function calls:
+
+* **Regular Call**: pushes only `PC`.
+* **Safe Call**: pushes `PC`, registers, and flags (restores state on return).
+
+---
+
+## 3. Instruction Format
+
+Each instruction is **4 bytes**:
+
+* **High 2 bytes** → Opcode
+* **Low 2 bytes** → Variant
+
+Example:
+
+```
+0xf018a01f  →  SafeCall with constant address
 ```
 
-### Common Variants
-```plaintext
-Default = 0x0000
-PushConst = 0xa001
-PushReg = 0xa002
-PushAddr = 0xa003
-PopReg = 0xa004
-PopAddr = 0xa005
-MoveConst = 0xa006
-MoveReg = 0xa007
-MoveAddr = 0xa008
-StoreConst = 0xa009
-StoreReg = 0xa00a
-JumpNotZero = 0xa00b
-JumpZero = 0xa00c
-JumpGreater = 0xa00d
-JumpGreaterEqual = 0xa00e
-JumpLesser = 0xa00f
-JumpLesserEqual = 0xa010
-```
+---
 
-## Assembly Syntax
+## 4. Opcodes
 
-### Comments
-```asm
-; This is a comment
-```
+The instruction set supports **arithmetic, logic, memory, flow control, calls, and interrupts**.
 
-### Numbers
-```asm
-123        ; Decimal
-0xabc      ; Hexadecimal
-0b010101   ; Binary
-```
+### 4.1 Stack Operations
 
-### Meta Commands
-```asm
-@ORIGIN 10  ; Code starts at address 10
-```
+* `PUSH` (constant, register, address, offset).
+* `POP` (into register or memory).
+* `DROP` → discard top of stack.
+* `DUP` → duplicate last item (supports constant/repetition).
+* `SWAP` → swap top two items.
 
-### Sections
-```asm
-[text]     ; Code section
-[data]     ; Data section
-```
+### Example
 
-### Labels
-```asm
-.mylabel   ; Label definition
-JMP .mylabel ; Jump to label
-```
-
-### Data Definitions
-```asm
-$name b "Pedram"         ; Byte array
-$scores w 0x10 0x20     ; Word array
-$data dw 0x11da00ae     ; Double word
-```
-
-## Commands
-
-### PUSH
-```asm
-PUSH 10           ; Constant
-PUSH r0           ; Register value
-PUSH $name        ; Address of data
-PUSH [$name]      ; Value at address
-PUSH [$name + 1]  ; Value at address + offset
-PUSH [$name + r0] ; Value at address + register offset
-PUSH .mylabel     ; Label address
-PUSH &0x1010      ; Memory value
-```
-
-### POP
-```asm
-POP r2        ; To register
-POP &0x321    ; To memory
-```
-
-### Arithmetic Operations
 ```asm
 PUSH 10
 PUSH 20
-ADD        ; Result: 30
-
-PUSH 10
-PUSH 20
-SUB        ; Result: 10
-
-PUSH 10
-PUSH 20
-MUL        ; Result: 200
-
-PUSH 10
-PUSH 3
-DIV        ; Result: 3, remainder in r3
+ADD     ; stack = [30]
 ```
 
-### Logical Operations
+---
+
+### 4.2 Arithmetic
+
+* `ADD` → `(a + b)`.
+* `SUB` → `(b - a)` (remember pop order).
+* `MUL` → multiplication.
+* `DIV` → division (`result` on stack, `remainder` in `r3`).
+* `INC rX` → increment register.
+* `DEC rX` → decrement register.
+
+---
+
+### 4.3 Logic & Bitwise
+
+* `AND`, `OR`, `XOR`, `NOT`.
+* `SHR`/`SHL` (by const or reg).
+
+---
+
+### 4.4 Data Movement
+
+* `MOVE` → move values into registers.
+* `STORE` → write constants or registers into memory.
+
+---
+
+### 4.5 Control Flow
+
+* `JMP` → unconditional.
+* `JNZ`, `JZ`, `JG`, `JGE`, `JL`, `JLE`.
+* `CALL`, `SAFECALL`, `RET`.
+
+---
+
+### 4.6 Interrupts
+
+* `INT module function` → call host-provided system function.
+* **Module 0 = I/O Module**, with 5 functions:
+
+  1. Print character (`pop → ASCII`).
+  2. Print character N times.
+  3. Print until sentinel value.
+  4. Print zero-terminated string.
+  5. Print number (decimal digits).
+
+---
+
+## 5. Assembly Language
+
+### 5.1 Basics
+
+* Case-insensitive.
+* Comments begin with `;`.
+* Numbers: decimal (`10`), hex (`0xFF`), binary (`0b1010`).
+
+---
+
+### 5.2 Meta Directives
+
+* `@ORIGIN n` → set code origin in memory.
+
+---
+
+### 5.3 Sections
+
+* `[text]` → program instructions.
+* `[data]` → constant/data definitions.
+
+---
+
+### 5.4 Labels
+
+* Defined with `.labelname`.
+* Used in jumps and calls.
+
+---
+
+### 5.5 Data Definitions
+
+* `$name b/w/dw values`.
+* Compact packing for `b` and `w`.
+
+Examples:
+
 ```asm
-PUSH 0b1010
-PUSH 0b1100
-AND        ; Result: 0b1000
-
-PUSH 0b1010
-PUSH 0b1100
-OR         ; Result: 0b1110
-
-PUSH 0b1010
-PUSH 0b1100
-XOR        ; Result: 0b0110
-
-PUSH 0b1010
-NOT        ; Result: 0xfffffff5
+$name b "ABC"
+$scores w 0x10 0x20 0x30
 ```
 
-### Flow Control
+---
+
+## 6. Example Programs
+
+### 6.1 Factorial
+
 ```asm
-JMP .label    ; Unconditional jump
-JNZ .label    ; Jump if not zero
-JZ .label     ; Jump if zero
-JG .label     ; Jump if greater
-JGE .label    ; Jump if greater or equal
-JL .label     ; Jump if less
-JLE .label    ; Jump if less or equal
-
-CALL .func    ; Call function
-SAFECALL .func ; Call with state preservation
-RET           ; Return from call
-```
-
-### Other Operations
-```asm
-SWAP        ; Swap top two stack items
-DROP        ; Remove top stack item
-DUP         ; Duplicate top stack item
-DUP 3       ; Duplicate top item 3 times
-DUP r0      ; Duplicate top item r0 times
-
-INC r0      ; Increment register
-DEC r0      ; Decrement register
-
-SHR 3       ; Shift right by 3
-SHL r0      ; Shift left by r0 value
-
-INT 0 0     ; Call interrupt module 0, function 0
-TERM        ; Terminate program
-```
-
-## Examples
-
-### Factorial Calculation
-```asm
-@org 0
+@ORIGIN 0
 [data]
-
-$num dw 0 1 2 3 4 5 6 7
-$title dw "Factorial result: " 13 10 0
-$msg dw "! = " 0
+$num    dw 0 1 2 3 4 5 6 7
+$title  dw "Factorial result: " 13 10 0
+$msg    dw "! = " 0
 $newline dw 10 13 0
 
 [text]
-
 .start
     push $title
     int 0 3
-    
+
     move r0 7
 .for
     push [$num + r0]
     safecall .factorial
     dec r0
     jnz .for
-    term
+term
 
 .factorial
     dup 2
@@ -258,11 +225,11 @@ $newline dw 10 13 0
     push r0
     mul
     pop r0
-    
+
     dec r1
     push r1
     jg .loop
-    
+
     push r5
     int 0 4
     push $msg
@@ -271,19 +238,33 @@ $newline dw 10 13 0
     int 0 4
     push $newline
     int 0 3
-    
     ret
 ```
 
-### Number Reversal
-```asm
-@org 0
-[text]
+**Output**:
 
+```
+Factorial result:
+7! = 5040
+6! = 720
+5! = 120
+4! = 24
+3! = 6
+2! = 2
+1! = 1
+```
+
+---
+
+### 6.2 Reverse Number
+
+```asm
+@ORIGIN 0
+[text]
 .start
     push 123456
     call .split
-    TERM
+    term
 
 .split
     push 10
@@ -301,7 +282,6 @@ $newline dw 10 13 0
     call .newline
     ret
 
-; push digit as parameter
 .printdigit
     push 48
     add
@@ -316,54 +296,23 @@ $newline dw 10 13 0
     ret
 ```
 
-### Interrupt Usage (IO Module)
-The IO module (module 0) provides these functions:
-- Function 0: Print ASCII character (pop value)
-- Function 1: Print multiple characters (pop count, then pop characters)
-- Function 2: Print until value (pop stop value, then pop characters until value)
-- Function 3: Print null-terminated string (pop address, print until null)
-- Function 4: Print number as digits (pop value)
+**Output**:
 
-```asm
-; Print "Hello World"
-push 'H'
-int 0 0
-push 'e'
-int 0 0
-push 'l'
-int 0 0
-push 'l'
-int 0 0
-push 'o'
-int 0 0
-push ' '
-int 0 0
-push 'W'
-int 0 0
-push 'o'
-int 0 0
-push 'r'
-int 0 0
-push 'l'
-int 0 0
-push 'd'
-int 0 0
-push 10    ; Newline
-int 0 0
-push 13    ; Carriage return
-int 0 0
-
-; Print number 123
-push 123
-int 0 4
+```
+654321
 ```
 
-## Best Practices
+---
 
-1. Always include `TERM` at the end of your program
-2. Use `SAFECALL` when you need to preserve register state
-3. Manage stack carefully to avoid overflow/underflow
-4. Use comments to document complex operations
-5. Test interrupt calls with simple values first
+## 7. Conclusion
 
-This tutorial covers the basics of MyVM assembly programming. Experiment with these examples and explore the various opcodes and addressing modes to become proficient with this virtual machine architecture.
+MyVM is a flexible educational virtual machine with:
+
+* **Simple stack-based execution model**.
+* **Rich instruction set** with memory, arithmetic, and flow control.
+* **Custom assembly language** supporting constants, labels, and structured programs.
+* **Interrupt system** for I/O.
+
+It can be extended with new modules, instructions, or compiler features to support more advanced applications.
+
+---
