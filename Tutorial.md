@@ -175,6 +175,10 @@ ADD     ; stack = [30]
 * Defined with `.labelname`.
 * Used in jumps and calls.
 
+### IMPORTANT
+
+Each source could should only have one special label called ".start". It marks the entry point of the program.
+
 ---
 
 ### 5.5 Data Definitions
