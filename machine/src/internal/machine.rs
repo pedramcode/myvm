@@ -69,7 +69,7 @@ impl Machine {
     }
 
     /// set origin of machine in memory (where to start running code)
-    pub fn set_origin(&mut self, address: u32) {
+    pub fn set_start(&mut self, address: u32) {
         self.register.pc = address;
     }
 

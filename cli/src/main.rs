@@ -19,7 +19,8 @@ fn main() {
             let mut output = std::fs::File::create(output.as_str()).expect("unable to create output file");
             
             let result = compile(code);
-            output.write_all(&result.origin.to_le_bytes()).expect("unable to write in output file");
+            output.write_all(&result.header.origin.to_le_bytes()).expect("unable to write in output file");
+            output.write_all(&result.header.start.to_le_bytes()).expect("unable to write in output file");
             for &num in &result.binary {
                 output.write_all(&num.to_le_bytes()).expect("unable to write in output file");
             }
@@ -32,7 +33,8 @@ fn main() {
                 panic!("file is too short to contain header");
             }
             let origin = u32::from_le_bytes(buffer[..4].try_into().unwrap());
-            let data: Vec<u32> = buffer[4..]
+            let start = u32::from_le_bytes(buffer[4..8].try_into().unwrap());
+            let data: Vec<u32> = buffer[8..]
                 .chunks_exact(4)
                 .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
                 .collect();
@@ -42,7 +44,7 @@ fn main() {
                 memory_stack_size: *stack,
             }).unwrap();
             machine.load_data(origin, &data).unwrap();
-            machine.set_origin(origin);
+            machine.set_start(start);
             machine.execute().unwrap();
             if *dump {
                 println!("{}", machine.memory);

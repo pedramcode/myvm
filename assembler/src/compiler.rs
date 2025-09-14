@@ -10,9 +10,14 @@ fn combine_hl(high: u32, low: u32) -> u32 {
 
 #[derive(Debug)]
 pub struct CompiledFrame {
-    pub origin: u32,
     pub binary: Vec<u32>,
-    pub start: Option<u32>,
+    pub header: Header,
+}
+
+#[derive(Debug)]
+pub struct Header {
+    pub origin: u32,
+    pub start: u32,
 }
 
 fn pack_u16_to_u32(v: Vec<u16>) -> Vec<u32> {
@@ -177,7 +182,6 @@ pub fn compile(code: String) -> CompiledFrame {
                 data_list.push((id, typ, result));
             },
             crate::tokens::Token::Command(cmd) => {
-                if start_pos.is_none() { continue; }
                 check_section("text", &current_section);
                 match cmd {
                     crate::tokens::Cmd::PushConst(const_value) => {
@@ -480,7 +484,6 @@ pub fn compile(code: String) -> CompiledFrame {
     }
     CompiledFrame{
         binary: result,
-        origin: origin,
-        start: start_pos,
+        header: Header { origin: origin, start: start_pos.unwrap() },
     }
 }
